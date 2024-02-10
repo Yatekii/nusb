@@ -210,10 +210,12 @@ pub use error::{ActiveConfigurationError, Error, ErrorKind, GetDescriptorError};
 /// ### Example
 ///
 /// ```no_run
+/// # fn main() {
 /// use nusb::{self, MaybeFuture};
 /// let device = nusb::list_devices().wait().unwrap()
 ///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
 ///     .expect("device not connected");
+/// # }
 /// ```
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 pub fn list_devices() -> impl MaybeFuture<Output = Result<impl Iterator<Item = DeviceInfo>, Error>>
@@ -228,6 +230,7 @@ pub fn list_devices() -> impl MaybeFuture<Output = Result<impl Iterator<Item = D
 /// Group devices by bus:
 ///
 /// ```no_run
+/// # fn main() {
 /// use std::collections::HashMap;
 /// use nusb::MaybeFuture;
 ///
@@ -239,6 +242,7 @@ pub fn list_devices() -> impl MaybeFuture<Output = Result<impl Iterator<Item = D
 ///         (bus_id, (bus, devs))
 ///     })
 ///     .collect();
+/// # }
 /// ```
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 pub fn list_buses() -> impl MaybeFuture<Output = Result<impl Iterator<Item = BusInfo>, Error>> {
@@ -257,6 +261,7 @@ pub fn list_buses() -> impl MaybeFuture<Output = Result<impl Iterator<Item = Bus
 /// ## Example
 ///
 /// ```no_run
+/// # fn main() {
 /// use std::collections::HashMap;
 /// use nusb::{MaybeFuture, DeviceInfo, DeviceId, hotplug::HotplugEvent};
 /// let watch = nusb::watch_devices().unwrap();
@@ -272,6 +277,7 @@ pub fn list_buses() -> impl MaybeFuture<Output = Result<impl Iterator<Item = Bus
 ///         }
 ///     }
 /// }
+/// # }
 /// ```
 ///
 /// ### Platform-specific notes:

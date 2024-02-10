@@ -4,7 +4,7 @@ use std::{
     mem::ManuallyDrop,
     ops::{Deref, DerefMut},
     pin::Pin,
-    ptr::{addr_of_mut, NonNull},
+    ptr::NonNull,
     sync::{
         atomic::{AtomicU8, Ordering},
         Arc, Mutex,
@@ -272,6 +272,7 @@ impl<D> MaybeFuture for TransferFuture<D>
 where
     D: Send,
 {
+    #[cfg(not(target_arch = "wasm32"))]
     fn wait(mut self) -> Self::Output {
         self.notify
             .wait(|| take_completed_from_option(&mut self.transfer))

@@ -198,7 +198,7 @@ impl Device {
                 .map(|r| r.map_err(GetDescriptorError::Transfer))
         }
 
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(not(any(target_os = "windows", target_family = "wasm")))]
         {
             const STANDARD_REQUEST_GET_DESCRIPTOR: u8 = 0x06;
             use crate::transfer::{ControlType, Recipient};
@@ -215,6 +215,16 @@ impl Device {
                 timeout,
             )
             .map(|r| r.map_err(GetDescriptorError::Transfer))
+        }
+
+        #[cfg(target_family = "wasm")]
+        {
+            let device = self.backend.clone();
+            crate::maybe_future::future::ActualFuture::new(async move {
+                device
+                    .get_descriptor(desc_type, desc_index, language_id, timeout)
+                    .await
+            })
         }
     }
 
@@ -808,6 +818,7 @@ impl<EpType: BulkOrInterrupt, Dir: EndpointDirection> Endpoint<EpType, Dir> {
     /// ## Panics
     ///  * if there are no transfers pending (that is, if [`Self::pending()`]
     ///    would return 0).
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn wait_next_complete(&mut self, timeout: Duration) -> Option<Completion> {
         self.backend.wait_next_complete(timeout)
     }
@@ -871,6 +882,7 @@ impl<EpType: BulkOrInterrupt, Dir: EndpointDirection> Debug for Endpoint<EpType,
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn assert_send_sync() {
     use crate::transfer::{Bulk, In, Interrupt, Out};

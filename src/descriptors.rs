@@ -11,15 +11,22 @@ use crate::transfer::Direction;
 pub(crate) const DESCRIPTOR_TYPE_DEVICE: u8 = 0x01;
 pub(crate) const DESCRIPTOR_LEN_DEVICE: u8 = 18;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_CONFIGURATION: u8 = 0x02;
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_LEN_CONFIGURATION: u8 = 9;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_INTERFACE: u8 = 0x04;
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_LEN_INTERFACE: u8 = 9;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_ENDPOINT: u8 = 0x05;
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_LEN_ENDPOINT: u8 = 7;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_STRING: u8 = 0x03;
 
 /// USB defined language IDs for string descriptors.
@@ -39,7 +46,7 @@ pub mod language_id {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Descriptor<'a>(&'a [u8]);
 
-impl<'a> Descriptor<'a> {
+impl Descriptor<'_> {
     /// Create a `Descriptor` from a buffer.
     ///
     /// Returns `None` if
@@ -66,7 +73,7 @@ impl<'a> Descriptor<'a> {
     }
 }
 
-impl<'a> Deref for Descriptor<'a> {
+impl Deref for Descriptor<'_> {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
@@ -196,7 +203,7 @@ impl DeviceDescriptor {
         };
         let buf: [u8; DESCRIPTOR_LEN_DEVICE as usize] = buf.try_into().ok()?;
         if buf[0] < DESCRIPTOR_LEN_DEVICE {
-            warn!("invalid device descriptor bLength");
+            warn!("invalid config descriptor bLength. expected {DESCRIPTOR_LEN_CONFIGURATION}, got {}", buf[0]);
             None
         } else if buf[1] != DESCRIPTOR_TYPE_DEVICE {
             warn!(
@@ -457,7 +464,7 @@ descriptor_fields! {
     }
 }
 
-impl<'a> ConfigurationDescriptor<'a> {
+impl ConfigurationDescriptor<'_> {
     /// Index of the string descriptor describing this configuration.
     #[doc(alias = "iConfiguration")]
     pub fn string_index(&self) -> Option<NonZeroU8> {
@@ -478,7 +485,7 @@ where
     }
 }
 
-impl<'a> Debug for ConfigurationDescriptor<'a> {
+impl Debug for ConfigurationDescriptor<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Configuration")
             .field("configuration_value", &self.configuration_value())
@@ -585,7 +592,7 @@ descriptor_fields! {
     }
 }
 
-impl<'a> InterfaceDescriptor<'a> {
+impl InterfaceDescriptor<'_> {
     /// Index of the string descriptor describing this interface or alternate setting.
     #[doc(alias = "iInterface")]
     pub fn string_index(&self) -> Option<NonZeroU8> {
@@ -593,7 +600,7 @@ impl<'a> InterfaceDescriptor<'a> {
     }
 }
 
-impl<'a> Debug for InterfaceDescriptor<'a> {
+impl Debug for InterfaceDescriptor<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("InterfaceAltSetting")
             .field("interface_number", &self.interface_number())
@@ -674,7 +681,7 @@ descriptor_fields! {
     }
 }
 
-impl<'a> Debug for EndpointDescriptor<'a> {
+impl Debug for EndpointDescriptor<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Endpoint")
             .field("address", &format_args!("0x{:02X}", self.address()))
@@ -704,6 +711,7 @@ pub enum TransferType {
     Interrupt = 3,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Split a chain of concatenated configuration descriptors by `wTotalLength`
 #[allow(unused)]
 pub(crate) fn parse_concatenated_config_descriptors(
@@ -740,6 +748,7 @@ pub fn fuzz_parse_concatenated_config_descriptors(buf: &[u8]) -> impl Iterator<I
     parse_concatenated_config_descriptors(buf)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]
 mod test_concatenated {
     use super::parse_concatenated_config_descriptors;
