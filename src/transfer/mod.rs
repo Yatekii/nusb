@@ -25,6 +25,8 @@ pub(crate) use control::SETUP_PACKET_SIZE;
 pub use control::{Control, ControlIn, ControlOut, ControlType, Direction, Recipient};
 
 mod internal;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use internal::TransferInner;
 pub(crate) use internal::{
     notify_completion, PlatformSubmit, PlatformTransfer, TransferHandle, TransferRequest,
 };
