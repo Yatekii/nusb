@@ -39,8 +39,8 @@ pub struct Device {
 }
 
 impl Device {
-    pub(crate) fn open(d: &DeviceInfo) -> Result<Device, std::io::Error> {
-        let backend = platform::Device::from_device_info(d)?;
+    pub(crate) async fn open(d: &DeviceInfo) -> Result<Device, std::io::Error> {
+        let backend = platform::Device::from_device_info(d).await?;
         Ok(Device { backend })
     }
 
@@ -141,10 +141,10 @@ impl Device {
     ///   descriptors will return an error.
     pub fn get_descriptor(
         &self,
-        desc_type: u8,
-        desc_index: u8,
-        language_id: u16,
-        timeout: Duration,
+        _desc_type: u8,
+        _desc_index: u8,
+        _language_id: u16,
+        _timeout: Duration,
     ) -> Result<Vec<u8>, Error> {
         #[cfg(target_os = "windows")]
         {
@@ -153,7 +153,7 @@ impl Device {
                 .get_descriptor(desc_type, desc_index, language_id)
         }
 
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(not(any(target_os = "windows", target_family = "wasm")))]
         {
             const STANDARD_REQUEST_GET_DESCRIPTOR: u8 = 0x06;
             use crate::transfer::{ControlType, Recipient};
@@ -174,6 +174,9 @@ impl Device {
             buf.truncate(len);
             Ok(buf)
         }
+
+        #[cfg(target_family = "wasm")]
+        todo!()
     }
 
     /// Request the list of supported languages for string descriptors.

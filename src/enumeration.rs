@@ -95,6 +95,11 @@ impl DeviceInfo {
         {
             DeviceId(self.registry_id)
         }
+
+        #[cfg(target_family = "wasm")]
+        {
+            DeviceId(todo!())
+        }
     }
 
     /// *(Linux-only)* Sysfs path for the device.
@@ -277,8 +282,8 @@ impl DeviceInfo {
     }
 
     /// Open the device
-    pub fn open(&self) -> Result<Device, Error> {
-        Device::open(self)
+    pub async fn open(&self) -> Result<Device, Error> {
+        Device::open(self).await
     }
 }
 
@@ -645,6 +650,11 @@ impl BusInfo {
         #[cfg(target_os = "macos")]
         {
             self.name.as_deref()
+        }
+
+        #[cfg(target_family = "wasm")]
+        {
+            Some("webusb")
         }
     }
 }
