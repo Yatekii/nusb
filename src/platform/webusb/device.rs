@@ -1,15 +1,17 @@
 use std::{sync::Arc, time::Duration};
 
 use wasm_bindgen_futures::{js_sys::Array, wasm_bindgen::JsCast, JsFuture};
-use web_sys::UsbDevice;
+use web_sys::{js_sys::Uint8Array, UsbControlTransferParameters, UsbDevice, UsbInTransferResult};
 
 use crate::{
-    transfer::{Control, Direction, EndpointType, TransferError, TransferHandle},
+    descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
+    transfer::{Control, EndpointType, TransferError, TransferHandle},
     DeviceInfo, Error,
 };
 
 pub(crate) struct WebusbDevice {
-    device: UsbDevice,
+    device: Arc<UsbDevice>,
+    config_descriptors: Vec<Vec<u8>>,
 }
 
 /// SAFETY: This is NOT safe at all.
@@ -27,32 +29,30 @@ impl WebusbDevice {
 
         for device in devices {
             let device: UsbDevice = JsCast::unchecked_from_js(device);
-            tracing::info!("{:x?}", device.vendor_id());
-            tracing::info!("{:x?}", device.product_id());
-            tracing::info!("{:?}", device.serial_number());
-            tracing::info!("{:#?}", d);
+            let device = Arc::new(device);
             if device.vendor_id() == d.vendor_id
                 && device.product_id() == d.product_id
                 && device.serial_number() == d.serial_number
             {
                 JsFuture::from(device.open()).await.unwrap();
-                return Ok(Arc::new(Self { device }));
+
+                let config_descriptors = extract_decriptors(&device).await;
+
+                return Ok(Arc::new(Self {
+                    device,
+                    config_descriptors,
+                }));
             }
         }
         Err(Error::other("device not found"))
     }
 
-    pub(crate) fn handle_events(&self) {
-        todo!()
-    }
+    // pub(crate) fn handle_events(&self) {
+    //     todo!()
+    // }
 
     pub(crate) fn configuration_descriptors(&self) -> impl Iterator<Item = &[u8]> {
-        let descriptors = self.device.configurations();
-        descriptors.into_iter().map(|d| {
-            let descriptor: UsbDevice = JsCast::unchecked_from_js(d);
-            descriptor;
-            [0, 0].as_slice()
-        })
+        self.config_descriptors.iter().map(|d| &d[..])
     }
 
     pub(crate) fn active_configuration_value(&self) -> u8 {
@@ -68,44 +68,50 @@ impl WebusbDevice {
     }
 
     /// SAFETY: `data` must be valid for `len` bytes to read or write, depending on `Direction`
-    unsafe fn control_blocking(
-        &self,
-        _direction: Direction,
-        _control: Control,
-        _data: *mut u8,
-        _len: usize,
-        _timeout: Duration,
-    ) -> Result<usize, TransferError> {
-        todo!()
-    }
+    // unsafe fn control_blocking(
+    //     &self,
+    //     _direction: Direction,
+    //     _control: Control,
+    //     _data: *mut u8,
+    //     _len: usize,
+    //     _timeout: Duration,
+    // ) -> Result<usize, TransferError> {
+    //     todo!()
+    // }
 
-    pub fn control_in_blocking(
-        &self,
-        _control: Control,
-        _data: &mut [u8],
-        _timeout: Duration,
-    ) -> Result<usize, TransferError> {
-        todo!()
-    }
+    // pub fn control_in_blocking(
+    //     &self,
+    //     _control: Control,
+    //     _data: &mut [u8],
+    //     _timeout: Duration,
+    // ) -> Result<usize, TransferError> {
+    //     todo!()
+    // }
 
-    pub fn control_out_blocking(
-        &self,
-        _control: Control,
-        _data: &[u8],
-        _timeout: Duration,
-    ) -> Result<usize, TransferError> {
-        todo!()
-    }
+    // pub fn control_out_blocking(
+    //     &self,
+    //     _control: Control,
+    //     _data: &[u8],
+    //     _timeout: Duration,
+    // ) -> Result<usize, TransferError> {
+    //     todo!()
+    // }
 
-    pub(crate) fn make_control_transfer(self: &Arc<Self>) -> TransferHandle<super::TransferData> {
-        todo!()
-    }
+    // pub(crate) fn make_control_transfer(self: &Arc<Self>) -> TransferHandle<super::TransferData> {
+    //     todo!()
+    // }
 
-    pub(crate) fn claim_interface(
+    pub(crate) async fn claim_interface(
         self: &Arc<Self>,
-        _interface: u8,
+        interface_number: u8,
     ) -> Result<Arc<WebusbInterface>, Error> {
-        todo!()
+        JsFuture::from(self.device.claim_interface(interface_number))
+            .await
+            .unwrap();
+        return Ok(Arc::new(WebusbInterface {
+            interface_number,
+            device: self.clone(),
+        }));
     }
 
     pub(crate) fn detach_and_claim_interface(
@@ -114,6 +120,60 @@ impl WebusbDevice {
     ) -> Result<Arc<WebusbInterface>, Error> {
         todo!()
     }
+}
+
+pub async fn extract_decriptors(device: &UsbDevice) -> Vec<Vec<u8>> {
+    let num_configurations = device.configurations().length() as usize;
+    let mut config_descriptors = Vec::with_capacity(num_configurations);
+
+    let mut v = vec![0; 255];
+    for i in 0..num_configurations {
+        let setup = UsbControlTransferParameters::new(
+            0,
+            web_sys::UsbRecipient::Device,
+            0x6, // Get descriptor: https://www.beyondlogic.org/usbnutshell/usb6.shtml#StandardDeviceRequests
+            web_sys::UsbRequestType::Standard,
+            ((DESCRIPTOR_TYPE_CONFIGURATION as u16) << 8) | (i as u16),
+        );
+        let res = JsFuture::from(device.control_transfer_in(&setup, 255))
+            .await
+            .unwrap();
+        let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
+        let data = Uint8Array::new(&res.data().unwrap().buffer());
+        data.copy_to(&mut v[..data.length() as usize]);
+        config_descriptors.push(
+            validate_config_descriptor(&v[..data.length() as usize])
+                .map(|_| v.iter().copied().take(data.length() as usize).collect())
+                .unwrap(),
+        )
+    }
+    config_descriptors
+}
+
+pub async fn extract_string(device: &UsbDevice, id: u16) -> String {
+    let mut v = vec![0; 255];
+    let setup = UsbControlTransferParameters::new(
+        0,
+        web_sys::UsbRecipient::Device,
+        0x6, // Get descriptor: https://www.beyondlogic.org/usbnutshell/usb6.shtml#StandardDeviceRequests
+        web_sys::UsbRequestType::Standard,
+        (0x03_u16 << 8) | (id),
+    );
+    let res = JsFuture::from(device.control_transfer_in(&setup, 255))
+        .await
+        .unwrap();
+    let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
+    let data = Uint8Array::new(&res.data().unwrap().buffer());
+    data.copy_to(&mut v[..data.length() as usize]);
+
+    String::from_utf16(
+        &v.drain(2..v[0] as usize)
+            .collect::<Vec<_>>()
+            .chunks(2)
+            .map(|c| ((c[1] as u16) << 8) | c[0] as u16)
+            .collect::<Vec<_>>(),
+    )
+    .unwrap()
 }
 
 pub(crate) struct WebusbInterface {

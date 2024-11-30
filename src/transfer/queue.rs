@@ -165,9 +165,9 @@ where
     /// side effects, enabling its use in `select!{}` or similar.
     ///
     /// Panics if there are no transfers pending.
-    pub fn next_complete<'a>(
-        &'a mut self,
-    ) -> impl Future<Output = Completion<R::Response>> + Unpin + Send + Sync + 'a {
+    pub fn next_complete(
+        &mut self,
+    ) -> impl Future<Output = Completion<R::Response>> + Unpin + Send + Sync + '_ {
         poll_fn(|cx| self.poll_next(cx))
     }
 

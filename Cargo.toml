@@ -22,9 +22,9 @@ tracing = "0.1"
 env_logger = "0.10.0"
 futures-lite = "1.13.0"
 
-[target.'cfg(any(target_os="linux", target_os="android"))'.dependencies]
-rustix = { version = "0.38.17", features = ["fs", "event", "net"] }
-libc = "0.2.155"
+# [target.'cfg(all(any(target_os="linux", target_os="android"), not(target_arch="wasm32")))'.dependencies]
+# rustix = { version = "0.38.17", features = ["fs", "event", "net"] }
+# libc = "0.2.155"
 
 [target.'cfg(target_os="windows")'.dependencies]
 windows-sys = { version = "0.48.0", features = [
@@ -44,7 +44,7 @@ core-foundation = "0.9.3"
 core-foundation-sys = "0.8.4"
 io-kit-sys = "0.4.0"
 
-[target.'cfg(target_family="wasm")'.dependencies]
+[target.'cfg(target_arch="wasm32")'.dependencies]
 web-sys = { version = "*", features = [
     "Document",
     "Window",
@@ -55,6 +55,11 @@ web-sys = { version = "*", features = [
     "UsbConfiguration",
     "UsbInterface",
     "UsbAlternateInterface",
+    "UsbControlTransferParameters",
+    "UsbRequestType",
+    "UsbRecipient",
+    "UsbInTransferResult",
+    "UsbTransferStatus",
 ] }
 wasm-bindgen-futures = { version = "*", futures = ["atomics"] }
 

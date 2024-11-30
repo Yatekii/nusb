@@ -79,18 +79,18 @@ const STATE_ABANDONED: u8 = 2;
 const STATE_COMPLETED: u8 = 3;
 
 impl<P: PlatformTransfer> TransferHandle<P> {
-    /// Create a new transfer and get a handle.
-    pub(crate) fn new(inner: P) -> TransferHandle<P> {
-        let b = Box::new(TransferInner {
-            platform_data: UnsafeCell::new(inner),
-            state: AtomicU8::new(STATE_IDLE),
-            waker: Arc::new(AtomicWaker::new()),
-        });
+    // /// Create a new transfer and get a handle.
+    // pub(crate) fn new(inner: P) -> TransferHandle<P> {
+    //     let b = Box::new(TransferInner {
+    //         platform_data: UnsafeCell::new(inner),
+    //         state: AtomicU8::new(STATE_IDLE),
+    //         waker: Arc::new(AtomicWaker::new()),
+    //     });
 
-        TransferHandle {
-            ptr: Box::leak(b).into(),
-        }
-    }
+    //     TransferHandle {
+    //         ptr: Box::leak(b).into(),
+    //     }
+    // }
 
     fn inner(&self) -> &TransferInner<P> {
         // SAFETY: while `TransferHandle` is alive, its `TransferInner` is alive
@@ -146,10 +146,7 @@ impl<P: PlatformTransfer> TransferHandle<P> {
         }
     }
 
-    pub fn poll_completion<D: TransferRequest>(
-        &mut self,
-        cx: &Context,
-    ) -> Poll<Completion<D::Response>>
+    pub fn poll_completion<D>(&mut self, cx: &Context) -> Poll<Completion<D::Response>>
     where
         D: TransferRequest,
         P: PlatformSubmit<D>,
@@ -176,20 +173,20 @@ impl<P: PlatformTransfer> Drop for TransferHandle<P> {
     }
 }
 
-/// Notify that a transfer has completed.
-///
-/// SAFETY: `transfer` must be a pointer previously passed to `submit`, and
-/// the caller / kernel must no longer dereference it or its buffer.
-pub(crate) unsafe fn notify_completion<P: PlatformTransfer>(transfer: *mut c_void) {
-    unsafe {
-        let transfer = transfer as *mut TransferInner<P>;
-        let waker = (*transfer).waker.clone();
-        match (*transfer).state.swap(STATE_COMPLETED, Ordering::Release) {
-            STATE_PENDING => waker.wake(),
-            STATE_ABANDONED => {
-                drop(Box::from_raw(transfer));
-            }
-            s => panic!("Completing transfer in unexpected state {s}"),
-        }
-    }
-}
+// /// Notify that a transfer has completed.
+// ///
+// /// SAFETY: `transfer` must be a pointer previously passed to `submit`, and
+// /// the caller / kernel must no longer dereference it or its buffer.
+// pub(crate) unsafe fn notify_completion<P: PlatformTransfer>(transfer: *mut c_void) {
+//     unsafe {
+//         let transfer = transfer as *mut TransferInner<P>;
+//         let waker = (*transfer).waker.clone();
+//         match (*transfer).state.swap(STATE_COMPLETED, Ordering::Release) {
+//             STATE_PENDING => waker.wake(),
+//             STATE_ABANDONED => {
+//                 drop(Box::from_raw(transfer));
+//             }
+//             s => panic!("Completing transfer in unexpected state {s}"),
+//         }
+//     }
+// }

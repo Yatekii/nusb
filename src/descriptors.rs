@@ -17,17 +17,24 @@ use crate::{
     Error,
 };
 
-pub(crate) const DESCRIPTOR_LEN_DEVICE: u8 = 18;
+// pub(crate) const DESCRIPTOR_LEN_DEVICE: u8 = 18;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_CONFIGURATION: u8 = 0x02;
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_LEN_CONFIGURATION: u8 = 9;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_INTERFACE: u8 = 0x04;
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_LEN_INTERFACE: u8 = 9;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_ENDPOINT: u8 = 0x05;
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_LEN_ENDPOINT: u8 = 7;
 
+/// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_STRING: u8 = 0x03;
 
 /// USB defined language IDs for string descriptors.
@@ -182,7 +189,7 @@ macro_rules! descriptor_fields {
 
 pub(crate) fn validate_config_descriptor(buf: &[u8]) -> Option<usize> {
     if buf.len() < DESCRIPTOR_LEN_CONFIGURATION as usize {
-        if buf.len() != 0 {
+        if buf.is_empty() {
             warn!(
                 "config descriptor buffer is {} bytes, need {}",
                 buf.len(),
@@ -193,7 +200,10 @@ pub(crate) fn validate_config_descriptor(buf: &[u8]) -> Option<usize> {
     }
 
     if buf[0] < DESCRIPTOR_LEN_CONFIGURATION {
-        warn!("invalid config descriptor bLength");
+        warn!(
+            "invalid config descriptor bLength. expected {DESCRIPTOR_LEN_CONFIGURATION}, got {}",
+            buf[0]
+        );
         return None;
     }
 
@@ -548,15 +558,15 @@ impl From<ActiveConfigurationError> for Error {
     }
 }
 
-/// Split a chain of concatenated configuration descriptors by `wTotalLength`
-pub(crate) fn parse_concatenated_config_descriptors(mut buf: &[u8]) -> impl Iterator<Item = &[u8]> {
-    iter::from_fn(move || {
-        let total_len = validate_config_descriptor(buf)?;
-        let descriptors = &buf[..total_len];
-        buf = &buf[total_len..];
-        Some(descriptors)
-    })
-}
+// /// Split a chain of concatenated configuration descriptors by `wTotalLength`
+// pub(crate) fn parse_concatenated_config_descriptors(mut buf: &[u8]) -> impl Iterator<Item = &[u8]> {
+//     iter::from_fn(move || {
+//         let total_len = validate_config_descriptor(buf)?;
+//         let descriptors = &buf[..total_len];
+//         buf = &buf[total_len..];
+//         Some(descriptors)
+//     })
+// }
 
 pub(crate) fn validate_string_descriptor(data: &[u8]) -> bool {
     data.len() >= 2 && data[0] as usize == data.len() && data[1] == DESCRIPTOR_TYPE_STRING
@@ -582,64 +592,64 @@ pub fn fuzz_parse_concatenated_config_descriptors(buf: &[u8]) -> impl Iterator<I
     parse_concatenated_config_descriptors(buf)
 }
 
-#[cfg(test)]
-mod test_concatenated {
-    use super::parse_concatenated_config_descriptors;
+// #[cfg(test)]
+// mod test_concatenated {
+//     use super::parse_concatenated_config_descriptors;
 
-    #[test]
-    fn test_empty() {
-        assert_eq!(
-            parse_concatenated_config_descriptors(&[]).collect::<Vec<&[u8]>>(),
-            Vec::<&[u8]>::new()
-        );
-    }
+//     #[test]
+//     fn test_empty() {
+//         assert_eq!(
+//             parse_concatenated_config_descriptors(&[]).collect::<Vec<&[u8]>>(),
+//             Vec::<&[u8]>::new()
+//         );
+//     }
 
-    #[test]
-    fn test_short() {
-        assert_eq!(
-            parse_concatenated_config_descriptors(&[0]).collect::<Vec<&[u8]>>(),
-            Vec::<&[u8]>::new()
-        );
-    }
+//     #[test]
+//     fn test_short() {
+//         assert_eq!(
+//             parse_concatenated_config_descriptors(&[0]).collect::<Vec<&[u8]>>(),
+//             Vec::<&[u8]>::new()
+//         );
+//     }
 
-    #[test]
-    fn test_invalid_total_len() {
-        assert_eq!(
-            parse_concatenated_config_descriptors(&[9, 2, 0, 0, 0, 0, 0, 0, 0])
-                .collect::<Vec<&[u8]>>(),
-            Vec::<&[u8]>::new()
-        );
-    }
+//     #[test]
+//     fn test_invalid_total_len() {
+//         assert_eq!(
+//             parse_concatenated_config_descriptors(&[9, 2, 0, 0, 0, 0, 0, 0, 0])
+//                 .collect::<Vec<&[u8]>>(),
+//             Vec::<&[u8]>::new()
+//         );
+//     }
 
-    #[test]
-    fn test_one_config() {
-        assert_eq!(
-            parse_concatenated_config_descriptors(&[9, 2, 9, 0, 0, 0, 0, 0, 0])
-                .collect::<Vec<&[u8]>>(),
-            vec![&[9, 2, 9, 0, 0, 0, 0, 0, 0]]
-        );
+//     #[test]
+//     fn test_one_config() {
+//         assert_eq!(
+//             parse_concatenated_config_descriptors(&[9, 2, 9, 0, 0, 0, 0, 0, 0])
+//                 .collect::<Vec<&[u8]>>(),
+//             vec![&[9, 2, 9, 0, 0, 0, 0, 0, 0]]
+//         );
 
-        assert_eq!(
-            parse_concatenated_config_descriptors(&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0])
-                .collect::<Vec<&[u8]>>(),
-            vec![&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0]]
-        );
-    }
+//         assert_eq!(
+//             parse_concatenated_config_descriptors(&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0])
+//                 .collect::<Vec<&[u8]>>(),
+//             vec![&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0]]
+//         );
+//     }
 
-    #[test]
-    fn test_two_configs() {
-        assert_eq!(
-            parse_concatenated_config_descriptors(&[
-                9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 2, 9, 0, 0, 0, 0, 0, 0
-            ])
-            .collect::<Vec<&[u8]>>(),
-            vec![
-                [9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0].as_slice(),
-                [9, 2, 9, 0, 0, 0, 0, 0, 0].as_slice()
-            ]
-        );
-    }
-}
+//     #[test]
+//     fn test_two_configs() {
+//         assert_eq!(
+//             parse_concatenated_config_descriptors(&[
+//                 9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 2, 9, 0, 0, 0, 0, 0, 0
+//             ])
+//             .collect::<Vec<&[u8]>>(),
+//             vec![
+//                 [9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0].as_slice(),
+//                 [9, 2, 9, 0, 0, 0, 0, 0, 0].as_slice()
+//             ]
+//         );
+//     }
+// }
 
 #[test]
 fn test_empty_config() {

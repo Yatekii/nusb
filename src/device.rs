@@ -53,8 +53,8 @@ impl Device {
     }
 
     /// Open an interface of the device and claim it for exclusive use.
-    pub fn claim_interface(&self, interface: u8) -> Result<Interface, Error> {
-        let backend = self.backend.claim_interface(interface)?;
+    pub async fn claim_interface(&self, interface: u8) -> Result<Interface, Error> {
+        let backend = self.backend.claim_interface(interface).await?;
         Ok(Interface { backend })
     }
 
@@ -104,7 +104,7 @@ impl Device {
 
         self.configurations()
             .find(|c| c.configuration_value() == active)
-            .ok_or_else(|| ActiveConfigurationError {
+            .ok_or(ActiveConfigurationError {
                 configuration_value: active,
             })
     }

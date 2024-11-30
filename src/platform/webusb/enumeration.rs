@@ -1,11 +1,13 @@
 use wasm_bindgen_futures::{js_sys::Array, wasm_bindgen::JsCast, JsFuture};
 use web_sys::{UsbAlternateInterface, UsbConfiguration, UsbDevice, UsbInterface};
 
-use crate::{BusInfo, DeviceInfo, Error, InterfaceInfo};
+use crate::{
+    descriptors::Configuration,
+    platform::webusb::device::{extract_decriptors, extract_string},
+    BusInfo, DeviceInfo, Error, InterfaceInfo,
+};
 
 pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
-    tracing::debug!("enumerating");
-
     async fn inner() -> Result<Vec<DeviceInfo>, Error> {
         let window = web_sys::window().unwrap();
         let navigator = window.navigator();
@@ -17,6 +19,7 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
         let mut result = vec![];
         for device in devices {
             let device: UsbDevice = JsCast::unchecked_from_js(device);
+            JsFuture::from(device.open()).await.unwrap();
 
             result.push(DeviceInfo {
                 bus_id: "webusb".to_string(),
@@ -32,29 +35,34 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
                 manufacturer_string: device.manufacturer_name(),
                 product_string: device.product_name(),
                 serial_number: device.serial_number(),
-                interfaces: device
-                    .configurations()
-                    .into_iter()
-                    .flat_map(&mut |c| {
-                        let configuration: UsbConfiguration = JsCast::unchecked_from_js(c);
-                        configuration.interfaces().into_iter().map(|i| {
-                            let interface: UsbInterface = JsCast::unchecked_from_js(i);
-                            let alternate = interface.alternates().into_iter().next().unwrap();
-                            let alternate: UsbAlternateInterface =
-                                JsCast::unchecked_from_js(alternate);
-                            InterfaceInfo {
-                                interface_number: interface.interface_number(),
-                                class: alternate.interface_class(),
-                                subclass: alternate.interface_subclass(),
-                                protocol: alternate.interface_protocol(),
-                                interface_string: alternate.interface_name(),
-                            }
-                        })
-                    })
-                    .collect(),
+                interfaces: {
+                    let descriptors = extract_decriptors(&device).await;
+                    let mut interfaces = vec![];
+                    for descriptor in descriptors.into_iter() {
+                        let configuration = Configuration::new(&descriptor);
+                        for interface_group in configuration.interfaces() {
+                            let alternate = interface_group.first_alt_setting();
+                            let interface_string = if let Some(id) = alternate.string_index() {
+                                Some(extract_string(&device, id as u16).await)
+                            } else {
+                                None
+                            };
+
+                            interfaces.push(InterfaceInfo {
+                                interface_number: interface_group.interface_number(),
+                                class: alternate.class(),
+                                subclass: alternate.subclass(),
+                                protocol: alternate.protocol(),
+                                interface_string,
+                            });
+                        }
+                    }
+                    interfaces
+                },
                 port_chain: vec![],
                 max_packet_size_0: 255,
             });
+            JsFuture::from(device.close()).await.unwrap();
         }
 
         Ok(result)

@@ -68,9 +68,9 @@ pub struct Control {
 }
 
 impl Control {
-    pub(crate) fn request_type(&self, direction: Direction) -> u8 {
-        request_type(direction, self.control_type, self.recipient)
-    }
+    // pub(crate) fn request_type(&self, direction: Direction) -> u8 {
+    //     request_type(direction, self.control_type, self.recipient)
+    // }
 }
 
 /// SETUP packet and associated data to make an **OUT** request on a control endpoint.
