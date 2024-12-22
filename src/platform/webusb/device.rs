@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub(crate) struct WebusbDevice {
-    device: Arc<UsbDevice>,
+    pub device: Arc<UsbDevice>,
     config_descriptors: Vec<Vec<u8>>,
 }
 
@@ -184,10 +184,15 @@ pub(crate) struct WebusbInterface {
 impl WebusbInterface {
     pub(crate) fn make_transfer(
         self: &Arc<Self>,
-        _endpoint: u8,
-        _ep_type: EndpointType,
+        endpoint: u8,
+        ep_type: EndpointType,
     ) -> TransferHandle<super::TransferData> {
-        todo!()
+        TransferHandle::new(super::TransferData::new(
+            self.device.clone(),
+            self.clone(),
+            endpoint,
+            ep_type,
+        ))
     }
 
     pub fn control_in_blocking(

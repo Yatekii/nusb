@@ -35,7 +35,7 @@ pub trait PlatformSubmit<D: TransferRequest>: PlatformTransfer {
     unsafe fn take_completed(&mut self) -> Completion<D::Response>;
 }
 
-struct TransferInner<P: PlatformTransfer> {
+pub struct TransferInner<P: PlatformTransfer> {
     /// Platform-specific data.
     ///
     /// In an `UnsafeCell` because we provide `&mut` when the
@@ -48,6 +48,12 @@ struct TransferInner<P: PlatformTransfer> {
 
     /// Waker that is notified when transfer completes.
     waker: Arc<AtomicWaker>,
+}
+
+impl<P: PlatformTransfer> TransferInner<P> {
+    pub(crate) fn platform_data(&mut self) -> &mut P {
+        unsafe { &mut *self.platform_data.get() }
+    }
 }
 
 /// Handle to a transfer.
@@ -79,26 +85,26 @@ const STATE_ABANDONED: u8 = 2;
 const STATE_COMPLETED: u8 = 3;
 
 impl<P: PlatformTransfer> TransferHandle<P> {
-    // /// Create a new transfer and get a handle.
-    // pub(crate) fn new(inner: P) -> TransferHandle<P> {
-    //     let b = Box::new(TransferInner {
-    //         platform_data: UnsafeCell::new(inner),
-    //         state: AtomicU8::new(STATE_IDLE),
-    //         waker: Arc::new(AtomicWaker::new()),
-    //     });
+    /// Create a new transfer and get a handle.
+    pub(crate) fn new(inner: P) -> TransferHandle<P> {
+        let b = Box::new(TransferInner {
+            platform_data: UnsafeCell::new(inner),
+            state: AtomicU8::new(STATE_IDLE),
+            waker: Arc::new(AtomicWaker::new()),
+        });
 
-    //     TransferHandle {
-    //         ptr: Box::leak(b).into(),
-    //     }
-    // }
+        TransferHandle {
+            ptr: Box::leak(b).into(),
+        }
+    }
 
-    fn inner(&self) -> &TransferInner<P> {
+    pub(crate) fn inner(&self) -> &TransferInner<P> {
         // SAFETY: while `TransferHandle` is alive, its `TransferInner` is alive
         // (it may be shared by `notify_completion` on the event thread, so can't be &mut)
         unsafe { self.ptr.as_ref() }
     }
 
-    fn platform_data(&self) -> &P {
+    pub(crate) fn platform_data(&self) -> &P {
         // SAFETY: while `TransferHandle` is alive, the only mutable access to `platform_data`
         // is via this `TransferHandle`.
         unsafe { &*self.inner().platform_data.get() }
@@ -173,20 +179,20 @@ impl<P: PlatformTransfer> Drop for TransferHandle<P> {
     }
 }
 
-// /// Notify that a transfer has completed.
-// ///
-// /// SAFETY: `transfer` must be a pointer previously passed to `submit`, and
-// /// the caller / kernel must no longer dereference it or its buffer.
-// pub(crate) unsafe fn notify_completion<P: PlatformTransfer>(transfer: *mut c_void) {
-//     unsafe {
-//         let transfer = transfer as *mut TransferInner<P>;
-//         let waker = (*transfer).waker.clone();
-//         match (*transfer).state.swap(STATE_COMPLETED, Ordering::Release) {
-//             STATE_PENDING => waker.wake(),
-//             STATE_ABANDONED => {
-//                 drop(Box::from_raw(transfer));
-//             }
-//             s => panic!("Completing transfer in unexpected state {s}"),
-//         }
-//     }
-// }
+/// Notify that a transfer has completed.
+///
+/// SAFETY: `transfer` must be a pointer previously passed to `submit`, and
+/// the caller / kernel must no longer dereference it or its buffer.
+pub(crate) unsafe fn notify_completion<P: PlatformTransfer>(transfer: *mut c_void) {
+    unsafe {
+        let transfer = transfer as *mut TransferInner<P>;
+        let waker = (*transfer).waker.clone();
+        match (*transfer).state.swap(STATE_COMPLETED, Ordering::Release) {
+            STATE_PENDING => waker.wake(),
+            STATE_ABANDONED => {
+                drop(Box::from_raw(transfer));
+            }
+            s => panic!("Completing transfer in unexpected state {s}"),
+        }
+    }
+}

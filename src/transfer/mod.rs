@@ -25,7 +25,10 @@ pub(crate) use control::SETUP_PACKET_SIZE;
 pub use control::{Control, ControlIn, ControlOut, ControlType, Direction, Recipient};
 
 mod internal;
-pub(crate) use internal::{PlatformSubmit, PlatformTransfer, TransferHandle, TransferRequest};
+pub(crate) use internal::{
+    notify_completion, PlatformSubmit, PlatformTransfer, TransferHandle, TransferInner,
+    TransferRequest,
+};
 
 /// Endpoint type.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

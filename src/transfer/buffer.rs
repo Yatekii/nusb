@@ -29,11 +29,11 @@ impl RequestBuffer {
         }
     }
 
-    // pub(crate) fn into_vec(self) -> (Vec<u8>, usize) {
-    //     let s = ManuallyDrop::new(self);
-    //     let v = unsafe { Vec::from_raw_parts(s.buf, 0, s.capacity) };
-    //     (v, s.requested)
-    // }
+    pub(crate) fn into_vec(self) -> (Vec<u8>, usize) {
+        let s = ManuallyDrop::new(self);
+        let v = unsafe { Vec::from_raw_parts(s.buf, 0, s.capacity) };
+        (v, s.requested)
+    }
 
     /// Create a `RequestBuffer` by re-using the allocation of a `Vec`.
     pub fn reuse(v: Vec<u8>, len: usize) -> RequestBuffer {
@@ -85,14 +85,14 @@ pub struct ResponseBuffer {
 }
 
 impl ResponseBuffer {
-    // pub(crate) fn from_vec(v: Vec<u8>, transferred: usize) -> ResponseBuffer {
-    //     let mut v = ManuallyDrop::new(v);
-    //     ResponseBuffer {
-    //         buf: v.as_mut_ptr(),
-    //         capacity: v.capacity(),
-    //         transferred,
-    //     }
-    // }
+    pub(crate) fn from_vec(v: Vec<u8>, transferred: usize) -> ResponseBuffer {
+        let mut v = ManuallyDrop::new(v);
+        ResponseBuffer {
+            buf: v.as_mut_ptr(),
+            capacity: v.capacity(),
+            transferred,
+        }
+    }
 
     /// Get the number of bytes successfully transferred.
     pub fn actual_length(&self) -> usize {
