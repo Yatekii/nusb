@@ -54,7 +54,7 @@ pub mod language_id {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Descriptor<'a>(&'a [u8]);
 
-impl<'a> Descriptor<'a> {
+impl Descriptor<'_> {
     /// Create a `Descriptor` from a buffer.
     ///
     /// Returns `None` if
@@ -81,7 +81,7 @@ impl<'a> Descriptor<'a> {
     }
 }
 
-impl<'a> Deref for Descriptor<'a> {
+impl Deref for Descriptor<'_> {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
@@ -307,7 +307,7 @@ descriptor_fields! {
     }
 }
 
-impl<'a> Configuration<'a> {
+impl Configuration<'_> {
     /// Index of the string descriptor describing this configuration.
     #[doc(alias = "iConfiguration")]
     pub fn string_index(&self) -> Option<u8> {
@@ -328,7 +328,7 @@ where
     }
 }
 
-impl<'a> Debug for Configuration<'a> {
+impl Debug for Configuration<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Configuration")
             .field("configuration_value", &self.configuration_value())
@@ -381,7 +381,7 @@ impl<'a> InterfaceGroup<'a> {
 #[derive(Clone)]
 pub struct InterfaceAltSetting<'a>(&'a [u8]);
 
-impl<'a> InterfaceAltSetting<'a> {
+impl InterfaceAltSetting<'_> {
     /// Get the interface descriptor followed by all trailing endpoint and other
     /// descriptors up to the next interface descriptor.
     pub fn descriptors(&self) -> Descriptors {
@@ -430,7 +430,7 @@ descriptor_fields! {
     }
 }
 
-impl<'a> InterfaceAltSetting<'a> {
+impl InterfaceAltSetting<'_> {
     /// Index of the string descriptor describing this interface or alternate setting.
     #[doc(alias = "iInterface")]
     pub fn string_index(&self) -> Option<u8> {
@@ -438,7 +438,7 @@ impl<'a> InterfaceAltSetting<'a> {
     }
 }
 
-impl<'a> Debug for InterfaceAltSetting<'a> {
+impl Debug for InterfaceAltSetting<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("InterfaceAltSetting")
             .field("interface_number", &self.interface_number())
@@ -456,7 +456,7 @@ impl<'a> Debug for InterfaceAltSetting<'a> {
 /// Information about a USB endpoint, with access to any associated descriptors.
 pub struct Endpoint<'a>(&'a [u8]);
 
-impl<'a> Endpoint<'a> {
+impl Endpoint<'_> {
     /// Get the endpoint descriptor followed by all trailing descriptors up to the next endpoint or interface descriptor.
     pub fn descriptors(&self) -> impl Iterator<Item = Descriptor> {
         Descriptors(self.0)
@@ -517,7 +517,7 @@ descriptor_fields! {
     }
 }
 
-impl<'a> Debug for Endpoint<'a> {
+impl Debug for Endpoint<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Endpoint")
             .field("address", &format_args!("0x{:02X}", self.address()))
@@ -558,15 +558,16 @@ impl From<ActiveConfigurationError> for Error {
     }
 }
 
-// /// Split a chain of concatenated configuration descriptors by `wTotalLength`
-// pub(crate) fn parse_concatenated_config_descriptors(mut buf: &[u8]) -> impl Iterator<Item = &[u8]> {
-//     iter::from_fn(move || {
-//         let total_len = validate_config_descriptor(buf)?;
-//         let descriptors = &buf[..total_len];
-//         buf = &buf[total_len..];
-//         Some(descriptors)
-//     })
-// }
+#[cfg(not(target_arch = "wasm32"))]
+/// Split a chain of concatenated configuration descriptors by `wTotalLength`
+pub(crate) fn parse_concatenated_config_descriptors(mut buf: &[u8]) -> impl Iterator<Item = &[u8]> {
+    iter::from_fn(move || {
+        let total_len = validate_config_descriptor(buf)?;
+        let descriptors = &buf[..total_len];
+        buf = &buf[total_len..];
+        Some(descriptors)
+    })
+}
 
 pub(crate) fn validate_string_descriptor(data: &[u8]) -> bool {
     data.len() >= 2 && data[0] as usize == data.len() && data[1] == DESCRIPTOR_TYPE_STRING
@@ -592,64 +593,66 @@ pub fn fuzz_parse_concatenated_config_descriptors(buf: &[u8]) -> impl Iterator<I
     parse_concatenated_config_descriptors(buf)
 }
 
-// #[cfg(test)]
-// mod test_concatenated {
-//     use super::parse_concatenated_config_descriptors;
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod test_concatenated {
 
-//     #[test]
-//     fn test_empty() {
-//         assert_eq!(
-//             parse_concatenated_config_descriptors(&[]).collect::<Vec<&[u8]>>(),
-//             Vec::<&[u8]>::new()
-//         );
-//     }
+    use super::parse_concatenated_config_descriptors;
 
-//     #[test]
-//     fn test_short() {
-//         assert_eq!(
-//             parse_concatenated_config_descriptors(&[0]).collect::<Vec<&[u8]>>(),
-//             Vec::<&[u8]>::new()
-//         );
-//     }
+    #[test]
+    fn test_empty() {
+        assert_eq!(
+            parse_concatenated_config_descriptors(&[]).collect::<Vec<&[u8]>>(),
+            Vec::<&[u8]>::new()
+        );
+    }
 
-//     #[test]
-//     fn test_invalid_total_len() {
-//         assert_eq!(
-//             parse_concatenated_config_descriptors(&[9, 2, 0, 0, 0, 0, 0, 0, 0])
-//                 .collect::<Vec<&[u8]>>(),
-//             Vec::<&[u8]>::new()
-//         );
-//     }
+    #[test]
+    fn test_short() {
+        assert_eq!(
+            parse_concatenated_config_descriptors(&[0]).collect::<Vec<&[u8]>>(),
+            Vec::<&[u8]>::new()
+        );
+    }
 
-//     #[test]
-//     fn test_one_config() {
-//         assert_eq!(
-//             parse_concatenated_config_descriptors(&[9, 2, 9, 0, 0, 0, 0, 0, 0])
-//                 .collect::<Vec<&[u8]>>(),
-//             vec![&[9, 2, 9, 0, 0, 0, 0, 0, 0]]
-//         );
+    #[test]
+    fn test_invalid_total_len() {
+        assert_eq!(
+            parse_concatenated_config_descriptors(&[9, 2, 0, 0, 0, 0, 0, 0, 0])
+                .collect::<Vec<&[u8]>>(),
+            Vec::<&[u8]>::new()
+        );
+    }
 
-//         assert_eq!(
-//             parse_concatenated_config_descriptors(&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0])
-//                 .collect::<Vec<&[u8]>>(),
-//             vec![&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0]]
-//         );
-//     }
+    #[test]
+    fn test_one_config() {
+        assert_eq!(
+            parse_concatenated_config_descriptors(&[9, 2, 9, 0, 0, 0, 0, 0, 0])
+                .collect::<Vec<&[u8]>>(),
+            vec![&[9, 2, 9, 0, 0, 0, 0, 0, 0]]
+        );
 
-//     #[test]
-//     fn test_two_configs() {
-//         assert_eq!(
-//             parse_concatenated_config_descriptors(&[
-//                 9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 2, 9, 0, 0, 0, 0, 0, 0
-//             ])
-//             .collect::<Vec<&[u8]>>(),
-//             vec![
-//                 [9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0].as_slice(),
-//                 [9, 2, 9, 0, 0, 0, 0, 0, 0].as_slice()
-//             ]
-//         );
-//     }
-// }
+        assert_eq!(
+            parse_concatenated_config_descriptors(&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0])
+                .collect::<Vec<&[u8]>>(),
+            vec![&[9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0]]
+        );
+    }
+
+    #[test]
+    fn test_two_configs() {
+        assert_eq!(
+            parse_concatenated_config_descriptors(&[
+                9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 2, 9, 0, 0, 0, 0, 0, 0
+            ])
+            .collect::<Vec<&[u8]>>(),
+            vec![
+                [9, 2, 13, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0].as_slice(),
+                [9, 2, 9, 0, 0, 0, 0, 0, 0].as_slice()
+            ]
+        );
+    }
+}
 
 #[test]
 fn test_empty_config() {

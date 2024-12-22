@@ -138,31 +138,10 @@ pub type Error = io::Error;
 ///
 /// ```no_run
 /// use nusb;
-/// let device = nusb::list_devices().unwrap()
-///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
-///     .expect("device not connected");
-/// ```
-///
-/// ### Platform-specific notes
-/// * On Windows, hubs are not included in the list
-#[cfg(not(target_family = "wasm"))]
-pub fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
-    platform::list_devices()
-}
-#[cfg(target_family = "wasm")]
-/// Get an iterator listing the connected devices.
-///
-/// ### Example
-///
-/// ```no_run
-/// use nusb;
 /// let device = nusb::list_devices().await.unwrap()
 ///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
 ///     .expect("device not connected");
 /// ```
-///
-/// ### Platform-specific notes
-/// * On Windows, hubs are not included in the list
 pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
     platform::list_devices().await
 }

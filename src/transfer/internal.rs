@@ -98,13 +98,13 @@ impl<P: PlatformTransfer> TransferHandle<P> {
         }
     }
 
-    pub(crate) fn inner(&self) -> &TransferInner<P> {
+    fn inner(&self) -> &TransferInner<P> {
         // SAFETY: while `TransferHandle` is alive, its `TransferInner` is alive
         // (it may be shared by `notify_completion` on the event thread, so can't be &mut)
         unsafe { self.ptr.as_ref() }
     }
 
-    pub(crate) fn platform_data(&self) -> &P {
+    fn platform_data(&self) -> &P {
         // SAFETY: while `TransferHandle` is alive, the only mutable access to `platform_data`
         // is via this `TransferHandle`.
         unsafe { &*self.inner().platform_data.get() }

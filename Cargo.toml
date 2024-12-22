@@ -62,7 +62,7 @@ web-sys = { version = "*", features = [
     "UsbTransferStatus",
     "UsbOutTransferResult",
 ] }
-wasm-bindgen-futures = { version = "*", futures = ["atomics"] }
+wasm-bindgen-futures = { version = "*" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
