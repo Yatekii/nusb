@@ -1,5 +1,5 @@
 use wasm_bindgen_futures::{js_sys::Array, wasm_bindgen::JsCast, JsFuture};
-use web_sys::{UsbAlternateInterface, UsbConfiguration, UsbDevice, UsbInterface};
+use web_sys::UsbDevice;
 
 use crate::{
     descriptors::Configuration,
@@ -61,6 +61,7 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
                 },
                 port_chain: vec![],
                 max_packet_size_0: 255,
+                device: device.clone(),
             });
             JsFuture::from(device.close()).await.unwrap();
         }

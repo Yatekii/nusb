@@ -11,6 +11,8 @@ pub(crate) use device::WebusbDevice as Device;
 pub(crate) use device::WebusbInterface as Interface;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct DeviceId {}
+pub struct DeviceId {
+    pub(crate) id: usize,
+}
 
 pub(crate) use hotplug::WebusbHotplugWatch as HotplugWatch;

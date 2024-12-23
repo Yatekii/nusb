@@ -596,7 +596,6 @@ pub fn fuzz_parse_concatenated_config_descriptors(buf: &[u8]) -> impl Iterator<I
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]
 mod test_concatenated {
-
     use super::parse_concatenated_config_descriptors;
 
     #[test]
