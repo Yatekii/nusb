@@ -5,7 +5,7 @@ use web_sys::{js_sys::Uint8Array, UsbControlTransferParameters, UsbDevice, UsbIn
 
 use crate::{
     descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
-    transfer::{Control, EndpointType, TransferError, TransferHandle},
+    transfer::{Control, Direction, EndpointType, TransferError, TransferHandle},
     DeviceInfo, Error,
 };
 
@@ -67,39 +67,9 @@ impl WebusbDevice {
         todo!()
     }
 
-    /// SAFETY: `data` must be valid for `len` bytes to read or write, depending on `Direction`
-    // unsafe fn control_blocking(
-    //     &self,
-    //     _direction: Direction,
-    //     _control: Control,
-    //     _data: *mut u8,
-    //     _len: usize,
-    //     _timeout: Duration,
-    // ) -> Result<usize, TransferError> {
-    //     todo!()
-    // }
-
-    // pub fn control_in_blocking(
-    //     &self,
-    //     _control: Control,
-    //     _data: &mut [u8],
-    //     _timeout: Duration,
-    // ) -> Result<usize, TransferError> {
-    //     todo!()
-    // }
-
-    // pub fn control_out_blocking(
-    //     &self,
-    //     _control: Control,
-    //     _data: &[u8],
-    //     _timeout: Duration,
-    // ) -> Result<usize, TransferError> {
-    //     todo!()
-    // }
-
-    // pub(crate) fn make_control_transfer(self: &Arc<Self>) -> TransferHandle<super::TransferData> {
-    //     todo!()
-    // }
+    pub(crate) fn make_control_transfer(self: &Arc<Self>) -> TransferHandle<super::TransferData> {
+        todo!()
+    }
 
     pub(crate) async fn claim_interface(
         self: &Arc<Self>,
