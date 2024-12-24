@@ -157,7 +157,7 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
 /// ```no_run
 /// use std::collections::HashMap;
 ///
-/// let devices = nusb::list_devices().unwrap().collect::<Vec<_>>();
+/// let devices = nusb::list_devices().await.unwrap().collect::<Vec<_>>();
 /// let buses: HashMap<String, (nusb::BusInfo, Vec::<nusb::DeviceInfo>)> = nusb::list_buses().unwrap()
 ///     .map(|bus| {
 ///         let bus_id = bus.bus_id().to_owned();
@@ -188,7 +188,7 @@ pub fn list_buses() -> Result<impl Iterator<Item = BusInfo>, Error> {
 /// use std::collections::HashMap;
 /// use nusb::{DeviceInfo, DeviceId, hotplug::HotplugEvent};
 /// let watch = nusb::watch_devices().unwrap();
-/// let mut devices: HashMap<DeviceId, DeviceInfo> = nusb::list_devices().unwrap()
+/// let mut devices: HashMap<DeviceId, DeviceInfo> = nusb::list_devices().await.unwrap()
 ///     .map(|d| (d.id(), d)).collect();
 /// for event in futures_lite::stream::block_on(watch) {
 ///     match event {

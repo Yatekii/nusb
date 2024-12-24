@@ -19,7 +19,7 @@ use std::{io::ErrorKind, sync::Arc, time::Duration};
 ///
 /// ```no_run
 /// use nusb;
-/// let device_info = nusb::list_devices().unwrap()
+/// let device_info = nusb::list_devices().await.unwrap()
 ///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
 ///     .expect("device not connected");
 ///
@@ -287,7 +287,7 @@ impl Device {
     /// use futures_lite::future::block_on;
     /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
-    /// # let di = nusb::list_devices().unwrap().next().unwrap();
+    /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     ///
     /// let data: Vec<u8> = block_on(device.control_in(ControlIn {
@@ -320,7 +320,7 @@ impl Device {
     /// use futures_lite::future::block_on;
     /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
-    /// # let di = nusb::list_devices().unwrap().next().unwrap();
+    /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     ///
     /// block_on(device.control_out(ControlOut {
@@ -416,7 +416,7 @@ impl Interface {
     /// use futures_lite::future::block_on;
     /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
-    /// # let di = nusb::list_devices().unwrap().next().unwrap();
+    /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     /// # let interface = device.claim_interface(0).unwrap();
     ///
@@ -451,7 +451,7 @@ impl Interface {
     /// use futures_lite::future::block_on;
     /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
-    /// # let di = nusb::list_devices().unwrap().next().unwrap();
+    /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     /// # let interface = device.claim_interface(0).unwrap();
     ///

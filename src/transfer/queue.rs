@@ -52,7 +52,7 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 /// ```no_run
 /// use futures_lite::future::block_on;
 /// use nusb::transfer::RequestBuffer;
-/// # let di = nusb::list_devices().unwrap().next().unwrap();
+/// # let di = nusb::list_devices().await.unwrap().next().unwrap();
 /// # let device = di.open().unwrap();
 /// # let interface = device.claim_interface(0).unwrap();
 /// # fn handle_data(_: &[u8]) {}
@@ -81,7 +81,7 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 /// ```no_run
 /// use std::mem;
 /// use futures_lite::future::block_on;
-/// # let di = nusb::list_devices().unwrap().next().unwrap();
+/// # let di = nusb::list_devices().await.unwrap().next().unwrap();
 /// # let device = di.open().unwrap();
 /// # let interface = device.claim_interface(0).unwrap();
 /// # fn fill_data(_: &mut Vec<u8>) {}
