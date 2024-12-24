@@ -25,8 +25,8 @@ use std::{io::ErrorKind, sync::Arc, time::Duration};
 ///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
 ///     .expect("device not connected");
 ///
-/// let device = device_info.open().expect("failed to open device");
-/// let interface = device.claim_interface(0);
+/// let device = device_info.open().await.expect("failed to open device");
+/// let interface = device.claim_interface(0).await;
 /// # }
 /// ```
 ///
@@ -287,10 +287,9 @@ impl Device {
     /// ### Example
     ///
     /// ```no_run
+    /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # #[pollster::main]
     /// # async fn main() {
-    /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
-    /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     ///
@@ -303,7 +302,6 @@ impl Device {
     ///     length: 64,
     /// }).await.into_result()?;
     /// # Ok(()) }
-    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
@@ -322,10 +320,9 @@ impl Device {
     /// ### Example
     ///
     /// ```no_run
+    /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # #[pollster::main]
     /// # async fn main() {
-    /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
-    /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     ///
@@ -338,7 +335,6 @@ impl Device {
     ///     data: &[0x01, 0x02, 0x03, 0x04],
     /// }).await.into_result()?;
     /// # Ok(()) }
-    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
@@ -420,10 +416,9 @@ impl Interface {
     /// ### Example
     ///
     /// ```no_run
+    /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # #[pollster::main]
     /// # async fn main() {
-    /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
-    /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     /// # let interface = device.claim_interface(0).unwrap();
@@ -437,7 +432,6 @@ impl Interface {
     ///     length: 64,
     /// }).await.into_result()?;
     /// # Ok(()) }
-    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
@@ -457,10 +451,9 @@ impl Interface {
     /// ### Example
     ///
     /// ```no_run
+    /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # #[pollster::main]
     /// # async fn main() {
-    /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
-    /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     /// # let interface = device.claim_interface(0).unwrap();
@@ -474,7 +467,6 @@ impl Interface {
     ///     data: &[0x01, 0x02, 0x03, 0x04],
     /// }).await.into_result()?;
     /// # Ok(()) }
-    /// # }
     /// ```
     ///
     /// ### Platform-specific notes

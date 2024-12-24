@@ -76,7 +76,6 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 ///         
 ///         queue.submit(RequestBuffer::reuse(completion.data, transfer_size))
 ///     }
-/// }
 /// # }
 /// ```
 ///
@@ -110,7 +109,6 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 ///             break;
 ///         }
 ///     }
-/// }
 /// # }
 /// ```
 pub struct Queue<R: TransferRequest> {
