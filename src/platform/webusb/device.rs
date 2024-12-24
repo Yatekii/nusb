@@ -5,12 +5,13 @@ use web_sys::{js_sys::Uint8Array, UsbControlTransferParameters, UsbDevice, UsbIn
 
 use crate::{
     descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
-    transfer::{Control, Direction, EndpointType, TransferError, TransferHandle},
+    transfer::{Control, EndpointType, TransferError, TransferHandle},
     DeviceInfo, Error,
 };
 
+#[derive(Clone)]
 pub(crate) struct WebusbDevice {
-    pub device: Arc<UsbDevice>,
+    pub device: UsbDevice,
     config_descriptors: Vec<Vec<u8>>,
 }
 
@@ -24,20 +25,16 @@ impl WebusbDevice {
         let navigator = window.navigator();
         let usb = navigator.usb();
         let devices = JsFuture::from(usb.get_devices()).await.unwrap();
-
         let devices: Array = JsCast::unchecked_from_js(devices);
 
         for device in devices {
             let device: UsbDevice = JsCast::unchecked_from_js(device);
-            let device = Arc::new(device);
-            if device.vendor_id() == d.vendor_id
-                && device.product_id() == d.product_id
-                && device.serial_number() == d.serial_number
-            {
+            if device.eq(&d.device) {
                 JsFuture::from(device.open()).await.unwrap();
 
                 let config_descriptors = extract_decriptors(&device).await;
 
+                #[allow(clippy::arc_with_non_send_sync)]
                 return Ok(Arc::new(Self {
                     device,
                     config_descriptors,
@@ -72,20 +69,22 @@ impl WebusbDevice {
     }
 
     pub(crate) async fn claim_interface(
-        self: &Arc<Self>,
+        &self,
         interface_number: u8,
     ) -> Result<Arc<WebusbInterface>, Error> {
         JsFuture::from(self.device.claim_interface(interface_number))
             .await
             .unwrap();
-        return Ok(Arc::new(WebusbInterface {
+
+        #[allow(clippy::arc_with_non_send_sync)]
+        Ok(Arc::new(WebusbInterface {
             interface_number,
             device: self.clone(),
-        }));
+        }))
     }
 
     pub(crate) fn detach_and_claim_interface(
-        self: &Arc<Self>,
+        &self,
         _interface: u8,
     ) -> Result<Arc<WebusbInterface>, Error> {
         todo!()
@@ -146,14 +145,15 @@ pub async fn extract_string(device: &UsbDevice, id: u16) -> String {
     .unwrap()
 }
 
+#[derive(Clone)]
 pub(crate) struct WebusbInterface {
     pub interface_number: u8,
-    pub(crate) device: Arc<WebusbDevice>,
+    pub(crate) device: WebusbDevice,
 }
 
 impl WebusbInterface {
     pub(crate) fn make_transfer(
-        self: &Arc<Self>,
+        &self,
         endpoint: u8,
         ep_type: EndpointType,
     ) -> TransferHandle<super::TransferData> {

@@ -129,6 +129,8 @@ pub mod transfer;
 
 pub mod hotplug;
 
+mod maybe;
+
 /// OS error returned from operations other than transfers.
 pub type Error = io::Error;
 

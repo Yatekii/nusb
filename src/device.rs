@@ -587,6 +587,7 @@ impl Interface {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn assert_send_sync() {
     fn require_send_sync<T: Send + Sync>() {}

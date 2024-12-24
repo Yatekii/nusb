@@ -102,7 +102,6 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 ///     let completion = block_on(queue.next_complete());
 ///     data_confirmed_sent(completion.data.actual_length()); // your function
 ///     next_buf = completion.data.reuse();
-
 ///     if completion.status.is_err() {
 ///         break;
 ///     }
@@ -124,7 +123,7 @@ pub struct Queue<R: TransferRequest> {
 
 impl<R> Queue<R>
 where
-    R: TransferRequest + Send + Sync,
+    R: TransferRequest + crate::maybe::MaybeSend + crate::maybe::MaybeSync,
     platform::TransferData: PlatformSubmit<R>,
 {
     pub(crate) fn new(
@@ -167,7 +166,11 @@ where
     /// Panics if there are no transfers pending.
     pub fn next_complete(
         &mut self,
-    ) -> impl Future<Output = Completion<R::Response>> + Unpin + Send + Sync + '_ {
+    ) -> impl Future<Output = Completion<R::Response>>
+           + Unpin
+           + crate::maybe::MaybeSend
+           + crate::maybe::MaybeSync
+           + '_ {
         poll_fn(|cx| self.poll_next(cx))
     }
 

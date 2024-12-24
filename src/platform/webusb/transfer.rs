@@ -1,4 +1,4 @@
-use std::{ffi::c_void, sync::Arc};
+use std::ffi::c_void;
 
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 use web_sys::{
@@ -13,8 +13,8 @@ use crate::transfer::{
 };
 
 pub struct TransferData {
-    device: Arc<super::Device>,
-    interface: Arc<super::Interface>,
+    device: super::Device,
+    interface: super::Interface,
     endpoint: u8,
     ep_type: EndpointType,
     written_bytes: usize,
@@ -24,8 +24,8 @@ pub struct TransferData {
 
 impl TransferData {
     pub(crate) fn new(
-        device: Arc<super::Device>,
-        interface: Arc<super::Interface>,
+        device: super::Device,
+        interface: super::Interface,
         endpoint: u8,
         ep_type: EndpointType,
     ) -> Self {
@@ -60,11 +60,7 @@ impl TransferData {
     }
 }
 
-impl PlatformTransfer for TransferData {
-    fn cancel(&self) {
-        todo!()
-    }
-}
+impl PlatformTransfer for TransferData {}
 
 impl PlatformSubmit<Vec<u8>> for TransferData {
     unsafe fn submit(&mut self, data: Vec<u8>, user_data: *mut c_void) {

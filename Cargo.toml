@@ -21,6 +21,7 @@ tracing = "0.1"
 [dev-dependencies]
 env_logger = "0.10.0"
 futures-lite = "1.13.0"
+pollster = { version = "0.4", features = ["macro"] }
 
 # [target.'cfg(all(any(target_os="linux", target_os="android"), not(target_arch="wasm32")))'.dependencies]
 # rustix = { version = "0.38.17", features = ["fs", "event", "net"] }

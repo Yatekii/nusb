@@ -102,7 +102,7 @@ pub struct ControlOut<'a> {
     pub data: &'a [u8],
 }
 
-impl<'a> ControlOut<'a> {
+impl ControlOut<'_> {
     #[allow(unused)]
     pub(crate) fn setup_packet(&self) -> Result<[u8; SETUP_PACKET_SIZE], ()> {
         Ok(pack_setup(
