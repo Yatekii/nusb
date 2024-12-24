@@ -17,7 +17,8 @@ use crate::{
     Error,
 };
 
-// pub(crate) const DESCRIPTOR_LEN_DEVICE: u8 = 18;
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) const DESCRIPTOR_LEN_DEVICE: u8 = 18;
 
 /// https://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors
 pub(crate) const DESCRIPTOR_TYPE_CONFIGURATION: u8 = 0x02;

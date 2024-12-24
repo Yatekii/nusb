@@ -48,7 +48,7 @@ pub(crate) struct LinuxDevice {
 }
 
 impl LinuxDevice {
-    pub(crate) fn from_device_info(d: &DeviceInfo) -> Result<Arc<LinuxDevice>, Error> {
+    pub(crate) async fn from_device_info(d: &DeviceInfo) -> Result<Arc<LinuxDevice>, Error> {
         let busnum = d.busnum();
         let devnum = d.device_address();
         let active_config = d.path.read_attr("bConfigurationValue")?;
@@ -253,16 +253,18 @@ impl LinuxDevice {
         ))
     }
 
-    pub(crate) fn claim_interface(
+    pub(crate) async fn claim_interface(
         self: &Arc<Self>,
         interface_number: u8,
     ) -> Result<Arc<LinuxInterface>, Error> {
-        usbfs::claim_interface(&self.fd, interface_number).inspect_err(|e| {
-            warn!(
-                "Failed to claim interface {interface_number} on device id {dev}: {e}",
-                dev = self.events_id
-            )
-        })?;
+        usbfs::claim_interface(&self.fd, interface_number)
+            .await
+            .inspect_err(|e| {
+                warn!(
+                    "Failed to claim interface {interface_number} on device id {dev}: {e}",
+                    dev = self.events_id
+                )
+            })?;
         debug!(
             "Claimed interface {interface_number} on device id {dev}",
             dev = self.events_id
