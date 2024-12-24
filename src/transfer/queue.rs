@@ -54,8 +54,8 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 /// # async fn main() {
 ///     use nusb::transfer::RequestBuffer;
 ///     # let di = nusb::list_devices().await.unwrap().next().unwrap();
-///     # let device = di.open().unwrap();
-///     # let interface = device.claim_interface(0).unwrap();
+///     # let device = di.open().await.unwrap();
+///     # let interface = device.claim_interface(0).await.unwrap();
 ///     # fn handle_data(_: &[u8]) {}
 ///     let mut queue = interface.bulk_in_queue(0x81);
 ///
@@ -85,8 +85,8 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 /// # async fn main() {
 ///     use std::mem;
 ///     # let di = nusb::list_devices().await.unwrap().next().unwrap();
-///     # let device = di.open().unwrap();
-///     # let interface = device.claim_interface(0).unwrap();
+///     # let device = di.open().await.unwrap();
+///     # let interface = device.claim_interface(0).await.unwrap();
 ///     # fn fill_data(_: &mut Vec<u8>) {}
 ///     # fn data_confirmed_sent(_: usize) {}
 ///     let mut queue = interface.bulk_out_queue(0x02);
@@ -102,7 +102,7 @@ use super::{Completion, EndpointType, PlatformSubmit, TransferHandle, TransferRe
 ///             queue.submit(buf);
 ///         }
 ///
-///         let completion = queue.next_complete();
+///         let completion = queue.next_complete().await;
 ///         data_confirmed_sent(completion.data.actual_length()); // your function
 ///         next_buf = completion.data.reuse();
 ///         if completion.status.is_err() {

@@ -289,9 +289,9 @@ impl Device {
     /// ```no_run
     /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # #[pollster::main]
-    /// # async fn main() {
+    /// # async fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
-    /// # let device = di.open().unwrap();
+    /// # let device = di.open().await.unwrap();
     ///
     /// let data: Vec<u8> = device.control_in(ControlIn {
     ///     control_type: ControlType::Vendor,
@@ -322,9 +322,9 @@ impl Device {
     /// ```no_run
     /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # #[pollster::main]
-    /// # async fn main() {
+    /// # async fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
-    /// # let device = di.open().unwrap();
+    /// # let device = di.open().await.unwrap();
     ///
     /// device.control_out(ControlOut {
     ///     control_type: ControlType::Vendor,
@@ -418,10 +418,10 @@ impl Interface {
     /// ```no_run
     /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # #[pollster::main]
-    /// # async fn main() {
+    /// # async fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
-    /// # let device = di.open().unwrap();
-    /// # let interface = device.claim_interface(0).unwrap();
+    /// # let device = di.open().await.unwrap();
+    /// # let interface = device.claim_interface(0).await.unwrap();
     ///
     /// let data: Vec<u8> = interface.control_in(ControlIn {
     ///     control_type: ControlType::Vendor,
@@ -453,10 +453,10 @@ impl Interface {
     /// ```no_run
     /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # #[pollster::main]
-    /// # async fn main() {
+    /// # async fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
-    /// # let device = di.open().unwrap();
-    /// # let interface = device.claim_interface(0).unwrap();
+    /// # let device = di.open().await.unwrap();
+    /// # let interface = device.claim_interface(0).await.unwrap();
     ///
     /// interface.control_out(ControlOut {
     ///     control_type: ControlType::Vendor,
