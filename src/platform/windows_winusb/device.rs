@@ -118,11 +118,11 @@ impl WindowsDevice {
 
         if driver.eq_ignore_ascii_case("winusb") {
             match handles.entry(0) {
-                Entry::Occupied(mut e) => e.get_mut().claim_interface(self, interface_number),
+                Entry::Occupied(mut e) => e.get_mut().claim_interface(self, interface_number).await,
                 Entry::Vacant(e) => {
                     let path = get_winusb_device_path(self.devinst)?;
                     let mut handle = WinusbFileHandle::new(&path, 0)?;
-                    let intf = handle.claim_interface(self, interface_number)?;
+                    let intf = handle.claim_interface(self, interface_number).await?;
                     e.insert(handle);
                     Ok(intf)
                 }
@@ -137,11 +137,11 @@ impl WindowsDevice {
             }
 
             match handles.entry(first_interface) {
-                Entry::Occupied(mut e) => e.get_mut().claim_interface(self, interface_number),
+                Entry::Occupied(mut e) => e.get_mut().claim_interface(self, interface_number).await,
                 Entry::Vacant(e) => {
                     let path = get_usbccgp_winusb_device_path(child_dev)?;
                     let mut handle = WinusbFileHandle::new(&path, first_interface)?;
-                    let intf = handle.claim_interface(self, interface_number)?;
+                    let intf = handle.claim_interface(self, interface_number).await?;
                     e.insert(handle);
                     Ok(intf)
                 }
