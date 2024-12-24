@@ -46,7 +46,7 @@ struct DetachAndClaim {
     driver: [c_uchar; 255 + 1],
 }
 
-pub fn detach_and_claim_interface<Fd: AsFd>(fd: Fd, interface: u8) -> io::Result<()> {
+pub async fn detach_and_claim_interface<Fd: AsFd>(fd: Fd, interface: u8) -> io::Result<()> {
     const USBDEVFS_DISCONNECT_CLAIM_EXCEPT_DRIVER: c_uint = 0x02;
     unsafe {
         let mut dc = DetachAndClaim {

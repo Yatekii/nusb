@@ -83,7 +83,7 @@ impl WebusbDevice {
         }))
     }
 
-    pub(crate) fn detach_and_claim_interface(
+    pub(crate) async fn detach_and_claim_interface(
         &self,
         _interface: u8,
     ) -> Result<Arc<WebusbInterface>, Error> {

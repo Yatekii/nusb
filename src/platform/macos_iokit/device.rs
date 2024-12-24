@@ -225,11 +225,11 @@ impl MacDevice {
         }))
     }
 
-    pub(crate) fn detach_and_claim_interface(
+    pub(crate) async fn detach_and_claim_interface(
         self: &Arc<Self>,
         interface: u8,
     ) -> Result<Arc<MacInterface>, Error> {
-        self.claim_interface(interface)
+        self.claim_interface(interface).await
     }
 }
 

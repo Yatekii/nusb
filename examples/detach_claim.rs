@@ -12,7 +12,7 @@ async fn main() {
         .expect("device should be connected");
 
     let device = di.open().await.unwrap();
-    let interface = device.detach_and_claim_interface(0).unwrap();
+    let interface = device.detach_and_claim_interface(0).await.unwrap();
     sleep(Duration::from_secs(1));
     drop(interface);
 }

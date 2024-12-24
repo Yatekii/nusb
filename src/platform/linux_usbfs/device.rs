@@ -276,11 +276,11 @@ impl LinuxDevice {
         }))
     }
 
-    pub(crate) fn detach_and_claim_interface(
+    pub(crate) async fn detach_and_claim_interface(
         self: &Arc<Self>,
         interface_number: u8,
     ) -> Result<Arc<LinuxInterface>, Error> {
-        usbfs::detach_and_claim_interface(&self.fd, interface_number)?;
+        usbfs::detach_and_claim_interface(&self.fd, interface_number).await?;
         debug!(
             "Detached and claimed interface {interface_number} on device id {dev}",
             dev = self.events_id

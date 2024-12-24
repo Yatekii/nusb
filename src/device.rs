@@ -63,8 +63,8 @@ impl Device {
     /// ### Platform notes
     /// This function can only detach kernel drivers on Linux. Calling on other platforms has
     /// the same effect as [`claim_interface`][`Device::claim_interface`].
-    pub fn detach_and_claim_interface(&self, interface: u8) -> Result<Interface, Error> {
-        let backend = self.backend.detach_and_claim_interface(interface)?;
+    pub async fn detach_and_claim_interface(&self, interface: u8) -> Result<Interface, Error> {
+        let backend = self.backend.detach_and_claim_interface(interface).await?;
         Ok(Interface { backend })
     }
 
