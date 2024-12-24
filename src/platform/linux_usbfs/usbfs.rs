@@ -23,7 +23,7 @@ pub fn set_configuration<Fd: AsFd>(fd: Fd, configuration: u8) -> io::Result<()> 
     }
 }
 
-pub fn claim_interface<Fd: AsFd>(fd: Fd, interface: u8) -> io::Result<()> {
+pub async fn claim_interface<Fd: AsFd>(fd: Fd, interface: u8) -> io::Result<()> {
     unsafe {
         let ctl =
             ioctl::Setter::<ioctl::ReadOpcode<b'U', 15, c_uint>, c_uint>::new(interface.into());

@@ -45,7 +45,7 @@ pub(crate) struct WindowsDevice {
 }
 
 impl WindowsDevice {
-    pub(crate) fn from_device_info(d: &DeviceInfo) -> Result<Arc<WindowsDevice>, Error> {
+    pub(crate) async fn from_device_info(d: &DeviceInfo) -> Result<Arc<WindowsDevice>, Error> {
         debug!("Creating device for {:?}", d.instance_id);
 
         // Look up the device again in case the DeviceInfo is stale. In
@@ -108,7 +108,7 @@ impl WindowsDevice {
         ))
     }
 
-    pub(crate) fn claim_interface(
+    pub(crate) async fn claim_interface(
         self: &Arc<Self>,
         interface_number: u8,
     ) -> Result<Arc<WindowsInterface>, Error> {
@@ -226,7 +226,7 @@ impl WinusbFileHandle {
         })
     }
 
-    fn claim_interface(
+    async fn claim_interface(
         &mut self,
         device: &Arc<WindowsDevice>,
         interface_number: u8,

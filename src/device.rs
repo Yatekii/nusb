@@ -141,10 +141,10 @@ impl Device {
     ///   descriptors will return an error.
     pub fn get_descriptor(
         &self,
-        _desc_type: u8,
-        _desc_index: u8,
-        _language_id: u16,
-        _timeout: Duration,
+        desc_type: u8,
+        desc_index: u8,
+        language_id: u16,
+        timeout: Duration,
     ) -> Result<Vec<u8>, Error> {
         #[cfg(target_os = "windows")]
         {

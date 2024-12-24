@@ -2,8 +2,6 @@
 use std::ffi::{OsStr, OsString};
 use std::ops::AddAssign;
 
-use web_sys::{js_sys::Reflect, wasm_bindgen::JsValue};
-
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::platform::SysfsPath;
 
@@ -104,6 +102,7 @@ impl DeviceInfo {
 
         #[cfg(target_family = "wasm")]
         {
+            use web_sys::{js_sys::Reflect, wasm_bindgen::JsValue};
             let key = JsValue::from_str("nusbUniqueId");
             static INCREMENT: std::sync::LazyLock<std::sync::Mutex<usize>> =
                 std::sync::LazyLock::new(|| std::sync::Mutex::new(0));

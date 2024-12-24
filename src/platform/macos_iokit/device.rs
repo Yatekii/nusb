@@ -48,7 +48,7 @@ fn guess_active_config(dev: &IoKitDevice) -> Option<u8> {
 }
 
 impl MacDevice {
-    pub(crate) fn from_device_info(d: &DeviceInfo) -> Result<Arc<MacDevice>, Error> {
+    pub(crate) async fn from_device_info(d: &DeviceInfo) -> Result<Arc<MacDevice>, Error> {
         log::info!("Opening device from registry id {}", d.registry_id);
         let service = service_by_registry_id(d.registry_id)?;
         let device = IoKitDevice::new(service)?;
@@ -196,7 +196,7 @@ impl MacDevice {
         TransferHandle::new(super::TransferData::new_control(self.clone()))
     }
 
-    pub(crate) fn claim_interface(
+    pub(crate) async fn claim_interface(
         self: &Arc<Self>,
         interface_number: u8,
     ) -> Result<Arc<MacInterface>, Error> {
