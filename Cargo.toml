@@ -23,9 +23,9 @@ env_logger = "0.10.0"
 futures-lite = "1.13.0"
 pollster = { version = "0.4", features = ["macro"] }
 
-# [target.'cfg(all(any(target_os="linux", target_os="android"), not(target_arch="wasm32")))'.dependencies]
-# rustix = { version = "0.38.17", features = ["fs", "event", "net"] }
-# libc = "0.2.155"
+[target.'cfg(all(any(target_os="linux", target_os="android"), not(target_arch="wasm32")))'.dependencies]
+rustix = { version = "0.38.17", features = ["fs", "event", "net"] }
+libc = "0.2.155"
 
 [target.'cfg(target_os="windows")'.dependencies]
 windows-sys = { version = "0.48.0", features = [
