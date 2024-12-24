@@ -139,10 +139,13 @@ pub type Error = io::Error;
 /// ### Example
 ///
 /// ```no_run
+/// # #[pollster::main]
+/// # async fn main() {
 /// use nusb;
 /// let device = nusb::list_devices().await.unwrap()
 ///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
 ///     .expect("device not connected");
+/// # }
 /// ```
 pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
     platform::list_devices().await
@@ -155,6 +158,8 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
 /// Group devices by bus:
 ///
 /// ```no_run
+/// # #[pollster::main]
+/// # async fn main() {
 /// use std::collections::HashMap;
 ///
 /// let devices = nusb::list_devices().await.unwrap().collect::<Vec<_>>();
@@ -164,6 +169,7 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
 ///         (bus.bus_id().to_owned(), (bus, devices.clone().into_iter().filter(|dev| dev.bus_id() == bus_id).collect()))
 ///     })
 ///     .collect();
+/// # }
 /// ```
 ///
 /// ### Platform-specific notes
@@ -185,6 +191,8 @@ pub fn list_buses() -> Result<impl Iterator<Item = BusInfo>, Error> {
 /// ## Example
 ///
 /// ```no_run
+/// # #[pollster::main]
+/// # async fn main() {
 /// use std::collections::HashMap;
 /// use nusb::{DeviceInfo, DeviceId, hotplug::HotplugEvent};
 /// let watch = nusb::watch_devices().unwrap();
@@ -200,6 +208,7 @@ pub fn list_buses() -> Result<impl Iterator<Item = BusInfo>, Error> {
 ///         }
 ///     }
 /// }
+/// # }
 /// ```
 ///
 /// ### Platform-specific notes:

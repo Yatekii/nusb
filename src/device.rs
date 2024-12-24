@@ -18,6 +18,8 @@ use std::{io::ErrorKind, sync::Arc, time::Duration};
 /// Obtain a `Device` by calling [`DeviceInfo::open`]:
 ///
 /// ```no_run
+/// # #[pollster::main]
+/// # async fn main() {
 /// use nusb;
 /// let device_info = nusb::list_devices().await.unwrap()
 ///     .find(|dev| dev.vendor_id() == 0xAAAA && dev.product_id() == 0xBBBB)
@@ -25,6 +27,7 @@ use std::{io::ErrorKind, sync::Arc, time::Duration};
 ///
 /// let device = device_info.open().expect("failed to open device");
 /// let interface = device.claim_interface(0);
+/// # }
 /// ```
 ///
 /// This type is reference-counted with an [`Arc`] internally, and can be cloned cheaply for
@@ -284,21 +287,23 @@ impl Device {
     /// ### Example
     ///
     /// ```no_run
-    /// use futures_lite::future::block_on;
+    /// # #[pollster::main]
+    /// # async fn main() {
     /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     ///
-    /// let data: Vec<u8> = block_on(device.control_in(ControlIn {
+    /// let data: Vec<u8> = device.control_in(ControlIn {
     ///     control_type: ControlType::Vendor,
     ///     recipient: Recipient::Device,
     ///     request: 0x30,
     ///     value: 0x0,
     ///     index: 0x0,
     ///     length: 64,
-    /// })).into_result()?;
+    /// }).await.into_result()?;
     /// # Ok(()) }
+    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
@@ -317,21 +322,23 @@ impl Device {
     /// ### Example
     ///
     /// ```no_run
-    /// use futures_lite::future::block_on;
+    /// # #[pollster::main]
+    /// # async fn main() {
     /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     ///
-    /// block_on(device.control_out(ControlOut {
+    /// device.control_out(ControlOut {
     ///     control_type: ControlType::Vendor,
     ///     recipient: Recipient::Device,
     ///     request: 0x32,
     ///     value: 0x0,
     ///     index: 0x0,
     ///     data: &[0x01, 0x02, 0x03, 0x04],
-    /// })).into_result()?;
+    /// }).await.into_result()?;
     /// # Ok(()) }
+    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
@@ -413,22 +420,24 @@ impl Interface {
     /// ### Example
     ///
     /// ```no_run
-    /// use futures_lite::future::block_on;
+    /// # #[pollster::main]
+    /// # async fn main() {
     /// use nusb::transfer::{ ControlIn, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     /// # let interface = device.claim_interface(0).unwrap();
     ///
-    /// let data: Vec<u8> = block_on(interface.control_in(ControlIn {
+    /// let data: Vec<u8> = interface.control_in(ControlIn {
     ///     control_type: ControlType::Vendor,
     ///     recipient: Recipient::Device,
     ///     request: 0x30,
     ///     value: 0x0,
     ///     index: 0x0,
     ///     length: 64,
-    /// })).into_result()?;
+    /// }).await.into_result()?;
     /// # Ok(()) }
+    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
@@ -448,22 +457,24 @@ impl Interface {
     /// ### Example
     ///
     /// ```no_run
-    /// use futures_lite::future::block_on;
+    /// # #[pollster::main]
+    /// # async fn main() {
     /// use nusb::transfer::{ ControlOut, ControlType, Recipient };
     /// # fn main() -> Result<(), std::io::Error> {
     /// # let di = nusb::list_devices().await.unwrap().next().unwrap();
     /// # let device = di.open().unwrap();
     /// # let interface = device.claim_interface(0).unwrap();
     ///
-    /// block_on(interface.control_out(ControlOut {
+    /// interface.control_out(ControlOut {
     ///     control_type: ControlType::Vendor,
     ///     recipient: Recipient::Device,
     ///     request: 0x32,
     ///     value: 0x0,
     ///     index: 0x0,
     ///     data: &[0x01, 0x02, 0x03, 0x04],
-    /// })).into_result()?;
+    /// }).await.into_result()?;
     /// # Ok(()) }
+    /// # }
     /// ```
     ///
     /// ### Platform-specific notes
