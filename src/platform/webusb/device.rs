@@ -1,7 +1,10 @@
 use std::{sync::Arc, time::Duration};
 
 use wasm_bindgen_futures::{js_sys::Array, wasm_bindgen::JsCast, JsFuture};
-use web_sys::{js_sys::Uint8Array, UsbControlTransferParameters, UsbDevice, UsbInTransferResult};
+use web_sys::{
+    js_sys::Uint8Array, UsbControlTransferParameters, UsbDevice, UsbInTransferResult,
+    UsbOutTransferResult,
+};
 
 use crate::{
     descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
@@ -32,7 +35,7 @@ impl WebusbDevice {
             if device.eq(&d.device) {
                 JsFuture::from(device.open()).await.unwrap();
 
-                let config_descriptors = extract_decriptors(&device).await;
+                let config_descriptors = extract_decriptors(&device).await?;
 
                 #[allow(clippy::arc_with_non_send_sync)]
                 return Ok(Arc::new(Self {
@@ -89,38 +92,63 @@ impl WebusbDevice {
     ) -> Result<Arc<WebusbInterface>, Error> {
         todo!()
     }
+
+    pub async fn get_descriptor(
+        &self,
+        desc_type: u8,
+        desc_index: u8,
+        language_id: u16,
+        timeout: Duration,
+    ) -> Result<Vec<u8>, Error> {
+        get_descriptor(&self.device, desc_type, desc_index, language_id, timeout).await
+    }
 }
 
-pub async fn extract_decriptors(device: &UsbDevice) -> Vec<Vec<u8>> {
+pub async fn extract_decriptors(device: &UsbDevice) -> Result<Vec<Vec<u8>>, Error> {
     let num_configurations = device.configurations().length() as usize;
     let mut config_descriptors = Vec::with_capacity(num_configurations);
 
-    let mut v = vec![0; 255];
     for i in 0..num_configurations {
-        let setup = UsbControlTransferParameters::new(
-            0,
-            web_sys::UsbRecipient::Device,
-            0x6, // Get descriptor: https://www.beyondlogic.org/usbnutshell/usb6.shtml#StandardDeviceRequests
-            web_sys::UsbRequestType::Standard,
-            ((DESCRIPTOR_TYPE_CONFIGURATION as u16) << 8) | (i as u16),
-        );
-        let res = JsFuture::from(device.control_transfer_in(&setup, 255))
-            .await
-            .unwrap();
-        let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
-        let data = Uint8Array::new(&res.data().unwrap().buffer());
-        data.copy_to(&mut v[..data.length() as usize]);
-        config_descriptors.push(
-            validate_config_descriptor(&v[..data.length() as usize])
-                .map(|_| v.iter().copied().take(data.length() as usize).collect())
-                .unwrap(),
+        let language_id = 0;
+        let desc_type = DESCRIPTOR_TYPE_CONFIGURATION;
+        let desc_index = i as u8;
+        let data = get_descriptor(
+            device,
+            desc_type,
+            desc_index,
+            language_id,
+            Duration::from_millis(500),
         )
+        .await?;
+        if validate_config_descriptor(&data).is_some() {
+            config_descriptors.push(data)
+        }
     }
-    config_descriptors
+    Ok(config_descriptors)
+}
+
+pub async fn get_descriptor(
+    device: &UsbDevice,
+    desc_type: u8,
+    desc_index: u8,
+    language_id: u16,
+    _timeout: Duration,
+) -> Result<Vec<u8>, Error> {
+    let setup = UsbControlTransferParameters::new(
+        language_id,
+        web_sys::UsbRecipient::Device,
+        0x6, // Get descriptor: https://www.beyondlogic.org/usbnutshell/usb6.shtml#StandardDeviceRequests
+        web_sys::UsbRequestType::Standard,
+        ((desc_type as u16) << 8) | (desc_index as u16),
+    );
+    let res = wasm_bindgen_futures::JsFuture::from(device.control_transfer_in(&setup, 255))
+        .await
+        .unwrap();
+    let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
+    Ok(Uint8Array::new(&res.data().unwrap().buffer()).to_vec())
 }
 
 pub async fn extract_string(device: &UsbDevice, id: u16) -> String {
-    let mut v = vec![0; 255];
     let setup = UsbControlTransferParameters::new(
         0,
         web_sys::UsbRecipient::Device,
@@ -132,11 +160,11 @@ pub async fn extract_string(device: &UsbDevice, id: u16) -> String {
         .await
         .unwrap();
     let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
-    let data = Uint8Array::new(&res.data().unwrap().buffer());
-    data.copy_to(&mut v[..data.length() as usize]);
+    let mut data = Uint8Array::new(&res.data().unwrap().buffer()).to_vec();
 
     String::from_utf16(
-        &v.drain(2..v[0] as usize)
+        &data
+            .drain(2..data[0] as usize)
             .collect::<Vec<_>>()
             .chunks(2)
             .map(|c| ((c[1] as u16) << 8) | c[0] as u16)
@@ -165,29 +193,79 @@ impl WebusbInterface {
         ))
     }
 
-    pub fn control_in_blocking(
-        &self,
-        _control: Control,
-        _data: &mut [u8],
-        _timeout: Duration,
-    ) -> Result<usize, TransferError> {
-        todo!()
-    }
-
-    pub fn control_out_blocking(
-        &self,
-        _control: Control,
-        _data: &[u8],
-        _timeout: Duration,
-    ) -> Result<usize, TransferError> {
-        todo!()
-    }
-
     pub fn set_alt_setting(&self, _alt_setting: u8) -> Result<(), Error> {
         todo!()
     }
 
     pub fn clear_halt(&self, _endpoint: u8) -> Result<(), Error> {
         todo!()
+    }
+
+    pub async fn control_in(
+        &self,
+        control: Control,
+        data: &mut [u8],
+        _timeout: Duration,
+    ) -> Result<usize, TransferError> {
+        let setup = UsbControlTransferParameters::new(
+            control.index,
+            match control.recipient {
+                crate::transfer::Recipient::Device => web_sys::UsbRecipient::Device,
+                crate::transfer::Recipient::Interface => web_sys::UsbRecipient::Interface,
+                crate::transfer::Recipient::Endpoint => web_sys::UsbRecipient::Endpoint,
+                crate::transfer::Recipient::Other => web_sys::UsbRecipient::Other,
+            },
+            control.request,
+            match control.control_type {
+                crate::transfer::ControlType::Standard => web_sys::UsbRequestType::Standard,
+                crate::transfer::ControlType::Class => web_sys::UsbRequestType::Class,
+                crate::transfer::ControlType::Vendor => web_sys::UsbRequestType::Vendor,
+            },
+            control.value,
+        );
+        let res = wasm_bindgen_futures::JsFuture::from(
+            self.device.device.control_transfer_in(&setup, 255),
+        )
+        .await
+        .unwrap();
+        let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
+        let array = Uint8Array::new(&res.data().unwrap().buffer());
+        array.copy_to(data);
+        Ok(array.length() as usize)
+    }
+
+    pub async fn control_out(
+        &self,
+        control: Control,
+        data: &[u8],
+        _timeout: Duration,
+    ) -> Result<usize, TransferError> {
+        let setup = UsbControlTransferParameters::new(
+            control.index,
+            match control.recipient {
+                crate::transfer::Recipient::Device => web_sys::UsbRecipient::Device,
+                crate::transfer::Recipient::Interface => web_sys::UsbRecipient::Interface,
+                crate::transfer::Recipient::Endpoint => web_sys::UsbRecipient::Endpoint,
+                crate::transfer::Recipient::Other => web_sys::UsbRecipient::Other,
+            },
+            control.request,
+            match control.control_type {
+                crate::transfer::ControlType::Standard => web_sys::UsbRequestType::Standard,
+                crate::transfer::ControlType::Class => web_sys::UsbRequestType::Class,
+                crate::transfer::ControlType::Vendor => web_sys::UsbRequestType::Vendor,
+            },
+            control.value,
+        );
+        let mut data = data.to_vec();
+        let res = wasm_bindgen_futures::JsFuture::from(
+            self.device
+                .device
+                .control_transfer_out_with_u8_slice(&setup, &mut data)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+        let res: UsbOutTransferResult = JsCast::unchecked_from_js(res);
+        Ok(res.bytes_written() as usize)
     }
 }

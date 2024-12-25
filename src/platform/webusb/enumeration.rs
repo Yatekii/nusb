@@ -36,7 +36,7 @@ pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
                 product_string: device.product_name(),
                 serial_number: device.serial_number(),
                 interfaces: {
-                    let descriptors = extract_decriptors(&device).await;
+                    let descriptors = extract_decriptors(&device).await?;
                     let mut interfaces = vec![];
                     for descriptor in descriptors.into_iter() {
                         let configuration = Configuration::new(&descriptor);

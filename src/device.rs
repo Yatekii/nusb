@@ -4,10 +4,7 @@ use crate::{
         Configuration, InterfaceAltSetting, DESCRIPTOR_TYPE_STRING,
     },
     platform,
-    transfer::{
-        Control, ControlIn, ControlOut, EndpointType, Queue, RequestBuffer, TransferError,
-        TransferFuture,
-    },
+    transfer::{ControlIn, ControlOut, EndpointType, Queue, RequestBuffer, TransferFuture},
     DeviceInfo, Error,
 };
 use log::error;
@@ -142,7 +139,7 @@ impl Device {
     /// * On Windows, the timeout argument is ignored, and an OS-defined timeout is used.
     /// * On Windows, this does not wake suspended devices. Reading their
     ///   descriptors will return an error.
-    pub fn get_descriptor(
+    pub async fn get_descriptor(
         &self,
         desc_type: u8,
         desc_index: u8,
@@ -179,7 +176,13 @@ impl Device {
         }
 
         #[cfg(target_family = "wasm")]
-        todo!()
+        {
+            let device = self.backend.clone();
+
+            device
+                .get_descriptor(desc_type, desc_index, language_id, timeout)
+                .await
+        }
     }
 
     /// Request the list of supported languages for string descriptors.
@@ -187,11 +190,13 @@ impl Device {
     /// ### Platform-specific details
     ///
     /// See notes on [`get_descriptor`][`Self::get_descriptor`].
-    pub fn get_string_descriptor_supported_languages(
+    pub async fn get_string_descriptor_supported_languages(
         &self,
         timeout: Duration,
     ) -> Result<impl Iterator<Item = u16>, Error> {
-        let data = self.get_descriptor(DESCRIPTOR_TYPE_STRING, 0, 0, timeout)?;
+        let data = self
+            .get_descriptor(DESCRIPTOR_TYPE_STRING, 0, 0, timeout)
+            .await?;
 
         if !validate_string_descriptor(&data) {
             error!("String descriptor language list read {data:?}, not a valid string descriptor");
@@ -217,7 +222,7 @@ impl Device {
     /// ### Platform-specific details
     ///
     /// See notes on [`get_descriptor`][`Self::get_descriptor`].
-    pub fn get_string_descriptor(
+    pub async fn get_string_descriptor(
         &self,
         desc_index: u8,
         language_id: u16,
@@ -229,7 +234,9 @@ impl Device {
                 "string descriptor index 0 is reserved for the language table",
             ));
         }
-        let data = self.get_descriptor(DESCRIPTOR_TYPE_STRING, desc_index, language_id, timeout)?;
+        let data = self
+            .get_descriptor(DESCRIPTOR_TYPE_STRING, desc_index, language_id, timeout)
+            .await?;
 
         decode_string_descriptor(&data)
             .map_err(|_| Error::new(ErrorKind::InvalidData, "string descriptor data was invalid"))
@@ -257,10 +264,10 @@ impl Device {
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
     pub fn control_in_blocking(
         &self,
-        control: Control,
+        control: crate::transfer::Control,
         data: &mut [u8],
         timeout: Duration,
-    ) -> Result<usize, TransferError> {
+    ) -> Result<usize, crate::transfer::TransferError> {
         self.backend.control_in_blocking(control, data, timeout)
     }
 
@@ -275,10 +282,10 @@ impl Device {
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
     pub fn control_out_blocking(
         &self,
-        control: Control,
+        control: crate::transfer::Control,
         data: &[u8],
         timeout: Duration,
-    ) -> Result<usize, TransferError> {
+    ) -> Result<usize, crate::transfer::TransferError> {
         self.backend.control_out_blocking(control, data, timeout)
     }
 
@@ -308,7 +315,12 @@ impl Device {
     ///
     /// * Not supported on Windows. You must [claim an interface][`Device::claim_interface`]
     ///   and use the interface handle to submit transfers.
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "android",
+        target_arch = "wasm32"
+    ))]
     pub fn control_in(&self, data: ControlIn) -> TransferFuture<ControlIn> {
         let mut t = self.backend.make_control_transfer();
         t.submit::<ControlIn>(data);
@@ -341,7 +353,12 @@ impl Device {
     ///
     /// * Not supported on Windows. You must [claim an interface][`Device::claim_interface`]
     ///   and use the interface handle to submit transfers.
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "android",
+        target_arch = "wasm32"
+    ))]
     pub fn control_out(&self, data: ControlOut) -> TransferFuture<ControlOut> {
         let mut t = self.backend.make_control_transfer();
         t.submit::<ControlOut>(data);
@@ -371,6 +388,7 @@ impl Interface {
         self.backend.set_alt_setting(alt_setting)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Synchronously perform a single **IN (device-to-host)** transfer on the default **control** endpoint.
     ///
     /// ### Platform-specific notes
@@ -391,6 +409,7 @@ impl Interface {
         self.backend.control_in_blocking(control, data, timeout)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Synchronously perform a single **OUT (host-to-device)** transfer on the default **control** endpoint.
     ///
     /// ### Platform-specific notes
