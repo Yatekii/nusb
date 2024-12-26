@@ -384,8 +384,8 @@ impl Interface {
     /// An alternate setting is a mode of the interface that makes particular endpoints available
     /// and may enable or disable functionality of the device. The OS resets the device to the default
     /// alternate setting when the interface is released or the program exits.
-    pub fn set_alt_setting(&self, alt_setting: u8) -> Result<(), Error> {
-        self.backend.set_alt_setting(alt_setting)
+    pub async fn set_alt_setting(&self, alt_setting: u8) -> Result<(), Error> {
+        self.backend.set_alt_setting(alt_setting).await
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -580,8 +580,8 @@ impl Interface {
     /// resume use of the endpoint.
     ///
     /// This should not be called when transfers are pending on the endpoint.
-    pub fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
-        self.backend.clear_halt(endpoint)
+    pub async fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
+        self.backend.clear_halt(endpoint).await
     }
 
     /// Get the interface number.

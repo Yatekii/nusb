@@ -228,8 +228,8 @@ where
     /// the error and resume use of the endpoint.
     ///
     /// This should not be called when transfers are pending on the endpoint.
-    pub fn clear_halt(&mut self) -> Result<(), Error> {
-        self.interface.clear_halt(self.endpoint)
+    pub async fn clear_halt(&mut self) -> Result<(), Error> {
+        self.interface.clear_halt(self.endpoint).await
     }
 }
 

@@ -193,12 +193,40 @@ impl WebusbInterface {
         ))
     }
 
-    pub fn set_alt_setting(&self, _alt_setting: u8) -> Result<(), Error> {
-        todo!()
+    pub async fn set_alt_setting(&self, alternate_setting: u8) -> Result<(), Error> {
+        JsFuture::from(
+            self.device
+                .device
+                .select_alternate_interface(self.interface_number, alternate_setting),
+        )
+        .await
+        .map_err(|e| {
+            Error::other(
+                e.as_string()
+                    .unwrap_or_else(|| "No further error clarification available".into()),
+            )
+        })
+        .map(|_| ())
     }
 
-    pub fn clear_halt(&self, _endpoint: u8) -> Result<(), Error> {
-        todo!()
+    pub async fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
+        let endpoint_in = endpoint & 0x80 != 0;
+        JsFuture::from(self.device.device.clear_halt(
+            if endpoint_in {
+                web_sys::UsbDirection::In
+            } else {
+                web_sys::UsbDirection::Out
+            },
+            endpoint,
+        ))
+        .await
+        .map_err(|e| {
+            Error::other(
+                e.as_string()
+                    .unwrap_or_else(|| "No further error clarification available".into()),
+            )
+        })
+        .map(|_| ())
     }
 
     #[allow(dead_code)]
