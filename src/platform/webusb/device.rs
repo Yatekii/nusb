@@ -56,19 +56,42 @@ impl WebusbDevice {
     }
 
     pub(crate) fn active_configuration_value(&self) -> u8 {
-        todo!()
+        self.device
+            .configuration()
+            .map(|c| c.configuration_value())
+            .unwrap_or_default()
     }
 
-    pub(crate) fn set_configuration(&self, _configuration: u8) -> Result<(), Error> {
-        todo!()
+    pub(crate) async fn set_configuration(&self, configuration: u8) -> Result<(), Error> {
+        JsFuture::from(self.device.select_configuration(configuration))
+            .await
+            .map_err(|e| {
+                Error::other(
+                    e.as_string()
+                        .unwrap_or_else(|| "No further error clarification available".into()),
+                )
+            })
+            .map(|_| ())
     }
 
-    pub(crate) fn reset(&self) -> Result<(), Error> {
-        todo!()
+    pub(crate) async fn reset(&self) -> Result<(), Error> {
+        JsFuture::from(self.device.reset())
+            .await
+            .map_err(|e| {
+                Error::other(
+                    e.as_string()
+                        .unwrap_or_else(|| "No further error clarification available".into()),
+                )
+            })
+            .map(|_| ())
     }
 
-    pub(crate) fn make_control_transfer(self: &Arc<Self>) -> TransferHandle<super::TransferData> {
-        todo!()
+    pub(crate) fn make_control_transfer(&self) -> TransferHandle<super::TransferData> {
+        TransferHandle::new(super::TransferData::new(
+            self.clone(),
+            0,
+            EndpointType::Control,
+        ))
     }
 
     pub(crate) async fn claim_interface(
@@ -88,9 +111,9 @@ impl WebusbDevice {
 
     pub(crate) async fn detach_and_claim_interface(
         &self,
-        _interface: u8,
+        interface_number: u8,
     ) -> Result<Arc<WebusbInterface>, Error> {
-        todo!()
+        self.claim_interface(interface_number).await
     }
 
     pub async fn get_descriptor(
@@ -181,13 +204,12 @@ pub(crate) struct WebusbInterface {
 
 impl WebusbInterface {
     pub(crate) fn make_transfer(
-        &self,
+        self: &Arc<Self>,
         endpoint: u8,
         ep_type: EndpointType,
     ) -> TransferHandle<super::TransferData> {
         TransferHandle::new(super::TransferData::new(
             self.device.clone(),
-            self.clone(),
             endpoint,
             ep_type,
         ))

@@ -126,8 +126,8 @@ impl Device {
     ///
     /// ### Platform-specific notes
     /// * Not supported on Windows
-    pub fn set_configuration(&self, configuration: u8) -> Result<(), Error> {
-        self.backend.set_configuration(configuration)
+    pub async fn set_configuration(&self, configuration: u8) -> Result<(), Error> {
+        self.backend.set_configuration(configuration).await
     }
 
     /// Request a descriptor from the device.
@@ -249,8 +249,8 @@ impl Device {
     ///
     /// ### Platform-specific notes
     /// * Not supported on Windows
-    pub fn reset(&self) -> Result<(), Error> {
-        self.backend.reset()
+    pub async fn reset(&self) -> Result<(), Error> {
+        self.backend.reset().await
     }
 
     /// Synchronously perform a single **IN (device-to-host)** transfer on the default **control** endpoint.

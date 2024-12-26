@@ -22,12 +22,7 @@ pub struct TransferData {
 }
 
 impl TransferData {
-    pub(crate) fn new(
-        device: super::Device,
-        _interface: super::Interface,
-        endpoint: u8,
-        ep_type: EndpointType,
-    ) -> Self {
+    pub(crate) fn new(device: super::Device, endpoint: u8, ep_type: EndpointType) -> Self {
         Self {
             device,
             endpoint,
