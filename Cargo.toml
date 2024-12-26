@@ -63,6 +63,7 @@ web-sys = { version = "*", features = [
     "UsbTransferStatus",
     "UsbOutTransferResult",
     "UsbDirection",
+    "UsbConnectionEvent",
 ] }
 wasm-bindgen-futures = { version = "*" }
 

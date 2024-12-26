@@ -1,6 +1,5 @@
 #[cfg(target_os = "windows")]
 use std::ffi::{OsStr, OsString};
-use std::ops::AddAssign;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::platform::SysfsPath;
@@ -102,25 +101,7 @@ impl DeviceInfo {
 
         #[cfg(target_family = "wasm")]
         {
-            use web_sys::{js_sys::Reflect, wasm_bindgen::JsValue};
-            let key = JsValue::from_str("nusbUniqueId");
-            static INCREMENT: std::sync::LazyLock<std::sync::Mutex<usize>> =
-                std::sync::LazyLock::new(|| std::sync::Mutex::new(0));
-            let id = if let Ok(device_id) = Reflect::get(&self.device, &key) {
-                device_id
-                    .as_f64()
-                    .expect("Expected an integer ID. This is a bug. Please report it.")
-                    as usize
-            } else {
-                let mut lock = INCREMENT
-                    .lock()
-                    .expect("this should never be poisoned as we do not have multiple threads");
-                lock.add_assign(1);
-                Reflect::set(&self.device, &key, &JsValue::from_f64(*lock as f64))
-                    .expect("Could not set ID on JS object. This is a bug. Please report it.");
-                *lock
-            };
-            DeviceId(crate::platform::DeviceId { id })
+            DeviceId(crate::platform::DeviceId::from_device(&self.device))
         }
     }
 

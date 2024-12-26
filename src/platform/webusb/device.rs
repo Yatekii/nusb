@@ -47,10 +47,6 @@ impl WebusbDevice {
         Err(Error::other("device not found"))
     }
 
-    // pub(crate) fn handle_events(&self) {
-    //     todo!()
-    // }
-
     pub(crate) fn configuration_descriptors(&self) -> impl Iterator<Item = &[u8]> {
         self.config_descriptors.iter().map(|d| &d[..])
     }
