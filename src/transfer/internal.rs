@@ -44,7 +44,7 @@ pub trait PlatformSubmit<D: TransferRequest>: PlatformTransfer {
     unsafe fn take_completed(&mut self) -> Completion<D::Response>;
 }
 
-pub struct TransferInner<P: PlatformTransfer> {
+pub(crate) struct TransferInner<P: PlatformTransfer> {
     /// Platform-specific data.
     ///
     /// In an `UnsafeCell` because we provide `&mut` when the
