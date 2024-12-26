@@ -49,3 +49,15 @@ jobs:
         run: |
           cargo build --target aarch64-linux-android --all-features
           cargo build --target armv7-linux-androideabi --all-features
+
+  build_wasm32:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: "wasm32-unknown-unknown"
+      - name: build
+        run: |
+          cargo build --target wasm32-unknown-unknown --all-features
