@@ -25,6 +25,16 @@ pub enum ControlType {
     Vendor = 2,
 }
 
+impl From<ControlType> for web_sys::UsbRequestType {
+    fn from(value: ControlType) -> Self {
+        match value {
+            ControlType::Standard => web_sys::UsbRequestType::Standard,
+            ControlType::Class => web_sys::UsbRequestType::Class,
+            ControlType::Vendor => web_sys::UsbRequestType::Vendor,
+        }
+    }
+}
+
 /// Entity targeted by the request.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
@@ -40,6 +50,17 @@ pub enum Recipient {
 
     /// Other request.
     Other = 3,
+}
+
+impl From<Recipient> for web_sys::UsbRecipient {
+    fn from(value: Recipient) -> Self {
+        match value {
+            Recipient::Device => web_sys::UsbRecipient::Device,
+            Recipient::Interface => web_sys::UsbRecipient::Interface,
+            Recipient::Endpoint => web_sys::UsbRecipient::Endpoint,
+            Recipient::Other => web_sys::UsbRecipient::Other,
+        }
+    }
 }
 
 /// SETUP packet without direction or buffers

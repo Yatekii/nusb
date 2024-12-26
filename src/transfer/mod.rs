@@ -98,6 +98,15 @@ impl From<TransferError> for io::Error {
     }
 }
 
+pub(crate) fn web_to_nusb_status(status: web_sys::UsbTransferStatus) -> Result<(), TransferError> {
+    match status {
+        web_sys::UsbTransferStatus::Ok => Ok(()),
+        web_sys::UsbTransferStatus::Stall => Err(TransferError::Stall),
+        web_sys::UsbTransferStatus::Babble => Err(TransferError::Unknown),
+        _ => unreachable!(),
+    }
+}
+
 /// Status and data returned on transfer completion.
 ///
 /// A transfer can return partial data even in the case of failure or

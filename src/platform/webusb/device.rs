@@ -8,7 +8,7 @@ use web_sys::{
 
 use crate::{
     descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
-    transfer::{Control, EndpointType, TransferError, TransferHandle},
+    transfer::{web_to_nusb_status, Control, EndpointType, TransferError, TransferHandle},
     DeviceInfo, Error,
 };
 
@@ -201,6 +201,7 @@ impl WebusbInterface {
         todo!()
     }
 
+    #[allow(dead_code)]
     pub async fn control_in(
         &self,
         control: Control,
@@ -209,18 +210,9 @@ impl WebusbInterface {
     ) -> Result<usize, TransferError> {
         let setup = UsbControlTransferParameters::new(
             control.index,
-            match control.recipient {
-                crate::transfer::Recipient::Device => web_sys::UsbRecipient::Device,
-                crate::transfer::Recipient::Interface => web_sys::UsbRecipient::Interface,
-                crate::transfer::Recipient::Endpoint => web_sys::UsbRecipient::Endpoint,
-                crate::transfer::Recipient::Other => web_sys::UsbRecipient::Other,
-            },
+            control.recipient.into(),
             control.request,
-            match control.control_type {
-                crate::transfer::ControlType::Standard => web_sys::UsbRequestType::Standard,
-                crate::transfer::ControlType::Class => web_sys::UsbRequestType::Class,
-                crate::transfer::ControlType::Vendor => web_sys::UsbRequestType::Vendor,
-            },
+            control.control_type.into(),
             control.value,
         );
         let res = wasm_bindgen_futures::JsFuture::from(
@@ -231,10 +223,12 @@ impl WebusbInterface {
         let res: UsbInTransferResult = JsCast::unchecked_from_js(res);
         let array = Uint8Array::new(&res.data().unwrap().buffer());
         array.copy_to(data);
-        Ok(array.length() as usize)
+
+        web_to_nusb_status(res.status()).map(|_| array.length() as usize)
     }
 
-    pub async fn control_out(
+    #[allow(dead_code)]
+    pub(crate) async fn control_out(
         &self,
         control: Control,
         data: &[u8],
@@ -242,18 +236,9 @@ impl WebusbInterface {
     ) -> Result<usize, TransferError> {
         let setup = UsbControlTransferParameters::new(
             control.index,
-            match control.recipient {
-                crate::transfer::Recipient::Device => web_sys::UsbRecipient::Device,
-                crate::transfer::Recipient::Interface => web_sys::UsbRecipient::Interface,
-                crate::transfer::Recipient::Endpoint => web_sys::UsbRecipient::Endpoint,
-                crate::transfer::Recipient::Other => web_sys::UsbRecipient::Other,
-            },
+            control.recipient.into(),
             control.request,
-            match control.control_type {
-                crate::transfer::ControlType::Standard => web_sys::UsbRequestType::Standard,
-                crate::transfer::ControlType::Class => web_sys::UsbRequestType::Class,
-                crate::transfer::ControlType::Vendor => web_sys::UsbRequestType::Vendor,
-            },
+            control.control_type.into(),
             control.value,
         );
         let mut data = data.to_vec();
@@ -266,6 +251,7 @@ impl WebusbInterface {
         .await
         .unwrap();
         let res: UsbOutTransferResult = JsCast::unchecked_from_js(res);
-        Ok(res.bytes_written() as usize)
+
+        web_to_nusb_status(res.status()).map(|_| res.bytes_written() as usize)
     }
 }
