@@ -279,7 +279,7 @@ pub fn control<Fd: AsFd>(fd: Fd, transfer: CtrlTransfer) -> io::Result<usize> {
     }
 }
 
-pub fn clear_halt<Fd: AsFd>(fd: Fd, endpoint: u8) -> io::Result<()> {
+pub async fn clear_halt<Fd: AsFd>(fd: Fd, endpoint: u8) -> io::Result<()> {
     unsafe {
         let ctl =
             ioctl::Setter::<ioctl::ReadOpcode<b'U', 21, c_uint>, c_uint>::new(endpoint.into());

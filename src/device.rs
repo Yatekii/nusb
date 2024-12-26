@@ -160,7 +160,7 @@ impl Device {
 
             let mut buf = vec![0; 4096];
             let len = self.control_in_blocking(
-                Control {
+                crate::transfer::Control {
                     control_type: ControlType::Standard,
                     recipient: Recipient::Device,
                     request: STANDARD_REQUEST_GET_DESCRIPTOR,
@@ -402,10 +402,10 @@ impl Interface {
     ///   become an error in the future.
     pub fn control_in_blocking(
         &self,
-        control: Control,
+        control: crate::transfer::Control,
         data: &mut [u8],
         timeout: Duration,
-    ) -> Result<usize, TransferError> {
+    ) -> Result<usize, crate::transfer::TransferError> {
         self.backend.control_in_blocking(control, data, timeout)
     }
 
@@ -423,10 +423,10 @@ impl Interface {
     ///   become an error in the future.
     pub fn control_out_blocking(
         &self,
-        control: Control,
+        control: crate::transfer::Control,
         data: &[u8],
         timeout: Duration,
-    ) -> Result<usize, TransferError> {
+    ) -> Result<usize, crate::transfer::TransferError> {
         self.backend.control_out_blocking(control, data, timeout)
     }
 

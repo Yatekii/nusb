@@ -25,6 +25,7 @@ pub enum ControlType {
     Vendor = 2,
 }
 
+#[cfg(target_arch = "wasm32")]
 impl From<ControlType> for web_sys::UsbRequestType {
     fn from(value: ControlType) -> Self {
         match value {
@@ -52,6 +53,7 @@ pub enum Recipient {
     Other = 3,
 }
 
+#[cfg(target_arch = "wasm32")]
 impl From<Recipient> for web_sys::UsbRecipient {
     fn from(value: Recipient) -> Self {
         match value {

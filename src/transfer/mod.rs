@@ -26,8 +26,7 @@ pub use control::{Control, ControlIn, ControlOut, ControlType, Direction, Recipi
 
 mod internal;
 pub(crate) use internal::{
-    notify_completion, PlatformSubmit, PlatformTransfer, TransferHandle, TransferInner,
-    TransferRequest,
+    notify_completion, PlatformSubmit, PlatformTransfer, TransferHandle, TransferRequest,
 };
 
 /// Endpoint type.
@@ -98,6 +97,7 @@ impl From<TransferError> for io::Error {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn web_to_nusb_status(status: web_sys::UsbTransferStatus) -> Result<(), TransferError> {
     match status {
         web_sys::UsbTransferStatus::Ok => Ok(()),

@@ -85,7 +85,7 @@ impl WindowsDevice {
         self.config_descriptors.iter().map(|d| &d[..])
     }
 
-    pub(crate) fn set_configuration(&self, _configuration: u8) -> Result<(), Error> {
+    pub(crate) async fn set_configuration(&self, _configuration: u8) -> Result<(), Error> {
         Err(io::Error::new(
             ErrorKind::Unsupported,
             "set_configuration not supported by WinUSB",
@@ -101,7 +101,7 @@ impl WindowsDevice {
         HubPort::by_child_devinst(self.devinst)?.get_descriptor(desc_type, desc_index, language_id)
     }
 
-    pub(crate) fn reset(&self) -> Result<(), Error> {
+    pub(crate) async fn reset(&self) -> Result<(), Error> {
         Err(io::Error::new(
             ErrorKind::Unsupported,
             "reset not supported by WinUSB",
@@ -456,7 +456,7 @@ impl WindowsInterface {
         }
     }
 
-    pub fn set_alt_setting(&self, alt_setting: u8) -> Result<(), Error> {
+    pub async fn set_alt_setting(&self, alt_setting: u8) -> Result<(), Error> {
         unsafe {
             let r = WinUsb_SetCurrentAlternateSetting(self.winusb_handle, alt_setting.into());
             if r == TRUE {
@@ -467,7 +467,7 @@ impl WindowsInterface {
         }
     }
 
-    pub fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
+    pub async fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
         debug!("Clear halt, endpoint {endpoint:02x}");
         unsafe {
             let r = WinUsb_ResetPipe(self.winusb_handle, endpoint);

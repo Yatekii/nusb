@@ -171,13 +171,13 @@ impl LinuxDevice {
         self.active_config.load(Ordering::SeqCst)
     }
 
-    pub(crate) fn set_configuration(&self, configuration: u8) -> Result<(), Error> {
+    pub(crate) async fn set_configuration(&self, configuration: u8) -> Result<(), Error> {
         usbfs::set_configuration(&self.fd, configuration)?;
         self.active_config.store(configuration, Ordering::SeqCst);
         Ok(())
     }
 
-    pub(crate) fn reset(&self) -> Result<(), Error> {
+    pub(crate) async fn reset(&self) -> Result<(), Error> {
         usbfs::reset(&self.fd)?;
         Ok(())
     }
@@ -454,7 +454,7 @@ impl LinuxInterface {
         self.device.control_out_blocking(control, data, timeout)
     }
 
-    pub fn set_alt_setting(&self, alt_setting: u8) -> Result<(), Error> {
+    pub async fn set_alt_setting(&self, alt_setting: u8) -> Result<(), Error> {
         debug!(
             "Set interface {} alt setting to {alt_setting}",
             self.interface_number
@@ -466,7 +466,7 @@ impl LinuxInterface {
         )?)
     }
 
-    pub fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
+    pub async fn clear_halt(&self, endpoint: u8) -> Result<(), Error> {
         debug!("Clear halt, endpoint {endpoint:02x}");
         Ok(usbfs::clear_halt(&self.device.fd, endpoint)?)
     }
