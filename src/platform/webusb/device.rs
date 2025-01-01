@@ -18,10 +18,6 @@ pub(crate) struct WebusbDevice {
     config_descriptors: Vec<Vec<u8>>,
 }
 
-/// SAFETY: This is NOT safe at all.
-unsafe impl Sync for WebusbDevice {}
-unsafe impl Send for WebusbDevice {}
-
 impl WebusbDevice {
     pub(crate) async fn from_device_info(d: &DeviceInfo) -> Result<Arc<WebusbDevice>, Error> {
         let window = web_sys::window().unwrap();
