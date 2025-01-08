@@ -8,9 +8,11 @@ use web_sys::{
 
 use crate::{
     descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
-    transfer::{web_to_nusb_status, Control, EndpointType, TransferError, TransferHandle},
+    transfer::{Control, EndpointType, TransferError, TransferHandle},
     DeviceInfo, Error,
 };
+
+use super::web_to_nusb_status;
 
 #[derive(Clone)]
 pub(crate) struct WebusbDevice {

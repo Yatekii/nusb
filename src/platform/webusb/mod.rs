@@ -9,6 +9,13 @@ pub use enumeration::{list_buses, list_devices};
 
 pub(crate) use device::WebusbDevice as Device;
 pub(crate) use device::WebusbInterface as Interface;
+pub(crate) use hotplug::WebusbHotplugWatch as HotplugWatch;
+
+use web_sys::js_sys::Reflect;
+use web_sys::wasm_bindgen::JsValue;
+use web_sys::UsbDevice;
+
+use crate::transfer::TransferError;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct DeviceId {
@@ -39,7 +46,11 @@ impl DeviceId {
     }
 }
 
-pub(crate) use hotplug::WebusbHotplugWatch as HotplugWatch;
-use web_sys::js_sys::Reflect;
-use web_sys::wasm_bindgen::JsValue;
-use web_sys::UsbDevice;
+pub(crate) fn web_to_nusb_status(status: web_sys::UsbTransferStatus) -> Result<(), TransferError> {
+    match status {
+        web_sys::UsbTransferStatus::Ok => Ok(()),
+        web_sys::UsbTransferStatus::Stall => Err(TransferError::Stall),
+        web_sys::UsbTransferStatus::Babble => Err(TransferError::Unknown),
+        _ => unreachable!(),
+    }
+}

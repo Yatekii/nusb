@@ -8,9 +8,11 @@ use web_sys::{
 };
 
 use crate::transfer::{
-    notify_completion, web_to_nusb_status, Completion, ControlIn, ControlOut, EndpointType,
-    PlatformSubmit, PlatformTransfer, RequestBuffer, ResponseBuffer, TransferInner,
+    notify_completion, Completion, ControlIn, ControlOut, EndpointType, PlatformSubmit,
+    PlatformTransfer, RequestBuffer, ResponseBuffer, TransferInner,
 };
+
+use super::web_to_nusb_status;
 
 pub struct TransferData {
     device: super::Device,
