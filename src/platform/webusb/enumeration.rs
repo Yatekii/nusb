@@ -9,27 +9,34 @@ use crate::{
 
 pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
     async fn inner() -> Result<Vec<DeviceInfo>, Error> {
-        let window = web_sys::window().unwrap();
+        let window = web_sys::window()
+            .ok_or_else(|| Error::other("WebUSB is not available on this platform"))?;
         let navigator = window.navigator();
         let usb = navigator.usb();
-        let devices = JsFuture::from(usb.get_devices()).await.unwrap();
+        let devices = JsFuture::from(usb.get_devices())
+            .await
+            .map_err(|e| Error::other(format!("WebUSB devices could not be listed: {e:?}")))?;
 
         let devices: Array = JsCast::unchecked_from_js(devices);
 
         let mut result = vec![];
         for device in devices {
             let device: UsbDevice = JsCast::unchecked_from_js(device);
-            JsFuture::from(device.open()).await.unwrap();
+            JsFuture::from(device.open())
+                .await
+                .map_err(|e| Error::other(format!("WebUSB device could not be opened: {e:?}")))?;
 
             let device_info = device_to_info(device.clone()).await?;
             result.push(device_info);
-            JsFuture::from(device.close()).await.unwrap();
+            JsFuture::from(device.close())
+                .await
+                .map_err(|e| Error::other(format!("WebUSB device could not be closed: {e:?}")))?;
         }
 
         Ok(result)
     }
 
-    Ok(inner().await.unwrap().into_iter())
+    Ok(inner().await?.into_iter())
 }
 
 pub fn list_buses() -> Result<impl Iterator<Item = BusInfo>, Error> {
