@@ -24,9 +24,7 @@ pub(crate) struct WebusbHotplugWatch {
 
 impl WebusbHotplugWatch {
     pub fn new() -> Result<Self, Error> {
-        let window = web_sys::window().unwrap();
-        let navigator = window.navigator();
-        let usb = navigator.usb();
+        let usb = super::usb()?;
         let waker = Arc::new(AtomicWaker::new());
         let (sender, receiver) = channel();
         {

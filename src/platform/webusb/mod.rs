@@ -3,6 +3,8 @@ mod enumeration;
 mod hotplug;
 mod transfer;
 
+use std::io::Error;
+
 pub(crate) use transfer::TransferData;
 
 pub use enumeration::{list_buses, list_devices};
@@ -11,9 +13,14 @@ pub(crate) use device::WebusbDevice as Device;
 pub(crate) use device::WebusbInterface as Interface;
 pub(crate) use hotplug::WebusbHotplugWatch as HotplugWatch;
 
+use web_sys::js_sys;
 use web_sys::js_sys::Reflect;
+use web_sys::wasm_bindgen::JsCast;
 use web_sys::wasm_bindgen::JsValue;
+use web_sys::Usb;
 use web_sys::UsbDevice;
+use web_sys::Window;
+use web_sys::WorkerGlobalScope;
 
 use crate::transfer::TransferError;
 
@@ -53,4 +60,20 @@ pub(crate) fn web_to_nusb_status(status: web_sys::UsbTransferStatus) -> Result<(
         web_sys::UsbTransferStatus::Babble => Err(TransferError::Unknown),
         _ => unreachable!(),
     }
+}
+
+pub(crate) fn usb() -> Result<Usb, Error> {
+    let window = js_sys::global().dyn_into::<Window>().ok();
+
+    if let Some(window) = window {
+        return Ok(window.navigator().usb());
+    }
+
+    let wgs = js_sys::global().dyn_into::<WorkerGlobalScope>().ok();
+
+    if let Some(wgs) = wgs {
+        return Ok(wgs.navigator().usb());
+    }
+
+    Err(Error::other("WebUSB is not available on this platform"))
 }

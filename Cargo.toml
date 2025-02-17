@@ -65,6 +65,8 @@ web-sys = { version = "*", features = [
     "UsbOutTransferResult",
     "UsbDirection",
     "UsbConnectionEvent",
+    "WorkerGlobalScope",
+    "WorkerNavigator",
 ] }
 wasm-bindgen-futures = { version = "*" }
 

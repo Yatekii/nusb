@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{io::Error, sync::Arc, time::Duration};
 
 use wasm_bindgen_futures::{js_sys::Array, wasm_bindgen::JsCast, JsFuture};
 use web_sys::{
@@ -9,7 +9,7 @@ use web_sys::{
 use crate::{
     descriptors::{validate_config_descriptor, DESCRIPTOR_TYPE_CONFIGURATION},
     transfer::{Control, EndpointType, TransferError, TransferHandle},
-    DeviceInfo, Error,
+    DeviceInfo,
 };
 
 use super::web_to_nusb_status;
@@ -22,9 +22,7 @@ pub(crate) struct WebusbDevice {
 
 impl WebusbDevice {
     pub(crate) async fn from_device_info(d: &DeviceInfo) -> Result<Arc<WebusbDevice>, Error> {
-        let window = web_sys::window().unwrap();
-        let navigator = window.navigator();
-        let usb = navigator.usb();
+        let usb = super::usb()?;
         let devices = JsFuture::from(usb.get_devices()).await.unwrap();
         let devices: Array = JsCast::unchecked_from_js(devices);
 

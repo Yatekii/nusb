@@ -9,10 +9,7 @@ use crate::{
 
 pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
     async fn inner() -> Result<Vec<DeviceInfo>, Error> {
-        let window = web_sys::window()
-            .ok_or_else(|| Error::other("WebUSB is not available on this platform"))?;
-        let navigator = window.navigator();
-        let usb = navigator.usb();
+        let usb = super::usb()?;
         let devices = JsFuture::from(usb.get_devices())
             .await
             .map_err(|e| Error::other(format!("WebUSB devices could not be listed: {e:?}")))?;
