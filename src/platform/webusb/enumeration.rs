@@ -9,23 +9,26 @@ use crate::{
 
 pub async fn list_devices() -> Result<impl Iterator<Item = DeviceInfo>, Error> {
     async fn inner() -> Result<Vec<DeviceInfo>, Error> {
-        let window = web_sys::window()
-            .ok_or_else(|| Error::other("WebUSB is not available on this platform"))?;
-        let navigator = window.navigator();
-        let usb = navigator.usb();
+        let usb = super::usb()?;
+        tracing::info!("1");
         let devices = JsFuture::from(usb.get_devices())
             .await
             .map_err(|e| Error::other(format!("WebUSB devices could not be listed: {e:?}")))?;
 
+        tracing::info!("2");
         let devices: Array = JsCast::unchecked_from_js(devices);
 
+        tracing::info!("3");
         let mut result = vec![];
+        tracing::info!("4");
         for device in devices {
+            tracing::info!("5");
             let device: UsbDevice = JsCast::unchecked_from_js(device);
             JsFuture::from(device.open())
                 .await
                 .map_err(|e| Error::other(format!("WebUSB device could not be opened: {e:?}")))?;
 
+            tracing::info!("6");
             let device_info = device_to_info(device.clone()).await?;
             result.push(device_info);
             JsFuture::from(device.close())
