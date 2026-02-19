@@ -192,7 +192,7 @@ pub use device::{Device, Endpoint, Interface};
 
 pub mod transfer;
 
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_family = "wasm"))]
 pub mod hotplug;
 
 mod maybe_future;
